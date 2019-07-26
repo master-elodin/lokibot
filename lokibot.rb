@@ -2,33 +2,42 @@ require 'httparty'
 require_relative 'transactions'
 require_relative 'travel'
 
+TURN_CUTOFF = 15
+
 def create_new_game
   game_data = HTTParty.get('https://skysmuggler.com/game/new_game').parsed_response
   puts "Game ID: #{game_data['gameId']}"
   game_data
 end
 
-def take_turn(game_data, game_transactions)
-  if game_data['gameState']['turnsLeft'] > 10
-    game_id = game_data['gameId']
+def take_turn(game_data, game_transactions = Transactions.new, travel = Travel.new)
+  # --- sell
+  game_transactions.sell_cargo(game_data)
 
-    market_response = game_transactions.sell_cargo(game_data)
-    puts "market response for sale: #{market_response}"
+  # --- buy
+  game_transactions.buy_cargo(game_data, 'metal', 'max')
 
-    market_response = game_transactions.buy_cargo(game_data, 'metal', 'max')
-    puts "market response for purchase: #{market_response}"
+  # TODO: loanshark
+  # TODO: shipyard
+  # TODO: bank
 
-    next_planet = Travel.choose_next_planet(game_data)
-    game_data = Travel.travel(game_id, next_planet)
+  # --- travel
+  game_data = travel.travel(game_data)
 
-    puts "At the end of turn, you have #{game_data['gameState']['credits']} credits"
-    puts
+  current_credits = game_data['gameState']['credits']
+  puts "At the end of turn, you have #{current_credits} credits"
+  puts "Game data: #{game_data}"
+  puts
 
-    take_turn(game_data, game_transactions)
+  if game_data['gameState']['turnsLeft'] > TURN_CUTOFF
+    take_turn(game_data, game_transactions, travel)
+  else
+    puts "You made #{current_credits - 20000} credits this game"
+    puts "You traveled to these planets: #{travel.get_planets_traveled_to}"
   end
 end
 
 starting = Process.clock_gettime(Process::CLOCK_MONOTONIC)
-take_turn(create_new_game, Transactions.new)
+take_turn(create_new_game)
 ending = Process.clock_gettime(Process::CLOCK_MONOTONIC)
 puts "Completed game in #{((ending - starting) * 1000).round(3)} milliseconds"
