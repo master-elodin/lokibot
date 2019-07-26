@@ -1,5 +1,3 @@
-# frozen_string_literal: true
-
 class Data
 
   def self.all_cargo
@@ -12,12 +10,15 @@ class Data
     all_planets
   end
 
-  banned_cargo = {
-    "metal": 'pertia',
-    "narcotics": 'earth',
-    "medical": 'taspra',
-    "mining": 'caliban',
-    "weapons": 'umbriel',
-    "water": 'setebos'
-  }
+  def self.is_cargo_banned(cargo, planet)
+    banned_cargo = {
+        'metal' => 'pertia',
+        'narcotics' => 'earth',
+        'medical' => 'taspra',
+        'mining' => 'caliban',
+        'weapons' => 'umbriel',
+        'water' => 'setebos'
+    }
+    banned_cargo[cargo] == planet
+  end
 end
