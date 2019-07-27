@@ -12,6 +12,11 @@ class Travel
   end
 
   def travel(game_data)
+    if game_data['gameState']['turnsLeft'] == 1
+      puts "Not traveling on last turn"
+      return game_data
+    end
+
     game_id = game_data['gameId']
     to_planet = choose_next_planet(game_data)
 

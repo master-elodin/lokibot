@@ -16,6 +16,11 @@ class Transactions
       return game_data
     end
 
+    if game_data['gameState']['turnsLeft'] == 1
+      puts "Not buying cargo on last turn"
+      return game_data
+    end
+
     possible_cargos = []
     current_credits = game_data['gameState']['credits']
     game_data['currentMarket'].each do |cargo_name, cargo_price|
@@ -112,7 +117,8 @@ class Transactions
       if value > 0 and Data.is_cargo_banned(cargo_name, game_data['gameState']['planet'])
         puts "Cannot sell `#{cargo_name}` on #{game_data['gameState']['planet']}"
       elsif value > 0
-        if Cargos.can_sell(cargo_name, cargo_price)
+        is_last_turn = game_data['gameState']['turnsLeft'] == 1
+        if Cargos.can_sell(cargo_name, cargo_price) || is_last_turn
           transaction_data[cargo_name] = value
           puts "Selling #{value} #{cargo_name} at #{cargo_price} for a total income of #{cargo_price * value} credits"
           @transactions << {:type => 'sale', :name => cargo_name, :price => cargo_price, :amount => value}
