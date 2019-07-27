@@ -1,5 +1,8 @@
 class Travel
 
+  LOAN_SHARK_PLANET = 'umbriel'
+  MIN_CREDITS_AFTER_REPAYMENT = 10000
+
   def initialize
     @planets_traveled_to = []
   end
@@ -19,13 +22,23 @@ class Travel
   end
 
   def choose_next_planet(game_data)
-    current_planet = game_data['gameState']['planet']
+    game_state = game_data['gameState']
+    current_planet = game_state['planet']
+
+    credits_after_repayment = game_state['credits'] - game_state['loanBalance']
+    if game_state['loanBalance'] > 0 and current_planet != LOAN_SHARK_PLANET and credits_after_repayment > MIN_CREDITS_AFTER_REPAYMENT
+      puts "Can repay debt of #{game_state['loanBalance']} - traveling to #{LOAN_SHARK_PLANET}"
+      # TODO: only repay loanshark with a possibility of purchasing cargo afterward
+      return LOAN_SHARK_PLANET
+    end
+
+    # TODO: buy more bays
 
     # don't travel to a planet with a cargo you have that's banned unless the potential value of other non-banned cargos is greater
     possible_planets = []
     get_possible_travel_planets(current_planet).each do |planet|
       have_banned_cargo = false
-      game_data['gameState']['currentHold'].each do |cargo_name, cargo_amt|
+      game_state['currentHold'].each do |cargo_name, cargo_amt|
         if cargo_amt > 0 and Data.is_cargo_banned(cargo_name, planet)
           have_banned_cargo = true
           puts "Avoiding #{planet} because #{cargo_name} is banned there"
@@ -38,8 +51,6 @@ class Travel
       end
     end
 
-    # TODO: repay loanshark
-    # TODO: buy more bays
     possible_planets.at(rand(possible_planets.length))
   end
 
