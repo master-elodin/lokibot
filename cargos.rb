@@ -23,7 +23,7 @@ class Cargos
     current_market_price >= self.price_points[cargo_name][:sell]
   end
 
-  def self.price_differential(cargo_name)
-    self.price_points[cargo_name][:sell] - self.price_points[cargo_name][:buy]
+  def self.price_differential(cargo_name, buy_price = self.price_points[cargo_name][:buy], sell_price = self.price_points[cargo_name][:sell])
+    sell_price - buy_price
   end
 end

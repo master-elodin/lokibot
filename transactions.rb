@@ -36,7 +36,7 @@ class Transactions
     end
 
     # sort by price differential to get the best potential value
-    possible_cargos.sort {|a, b| Cargos.price_differential(b[:cargo_name]) <=> Cargos.price_differential(a[:cargo_name])}
+    possible_cargos.sort {|a, b| Cargos.price_differential(b[:cargo_name], b[:cargo_price]) <=> Cargos.price_differential(a[:cargo_name], a[:cargo_price])}
     puts "Possible cargo: #{possible_cargos}"
 
     credits_left = current_credits
