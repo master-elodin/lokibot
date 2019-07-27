@@ -12,10 +12,10 @@ end
 
 def take_turn(game_data, game_transactions = Transactions.new, travel = Travel.new)
   # --- sell
-  game_transactions.sell_cargo(game_data)
+  game_data = game_transactions.sell_cargo(game_data)
 
   # --- buy
-  game_transactions.buy_cargo(game_data)
+  game_data = game_transactions.buy_cargo(game_data)
 
   # TODO: loanshark
   # TODO: shipyard

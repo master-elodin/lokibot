@@ -13,7 +13,7 @@ class Transactions
     # don't over-buy
     if game_data['gameState']['totalBays'] - game_data['gameState']['usedBays'] == 0
       puts "No space to buy cargo"
-      return
+      return game_data
     end
 
     possible_cargos = []
@@ -52,12 +52,13 @@ class Transactions
         break
       end
     end
+    game_data
   end
 
   def buy_single_cargo(game_data, cargo_name, cargo_amt)
     if Data.is_cargo_banned(cargo_name, game_data['gameState']['planet'])
       puts "Tried to buy banned cargo `#{cargo_name}` on planet #{game_data['gameState']['planet']}"
-      return
+      return game_data
     end
 
     num_open_bays = game_data['gameState']['totalBays'] - game_data['gameState']['usedBays']
@@ -70,27 +71,27 @@ class Transactions
 
     if cargo_amt > num_open_bays
       puts "Tried to buy #{cargo_amt} but only have space for #{num_open_bays}"
-      return
+      return game_data
     end
 
     total_purchase_price = cargo_amt * cargo_price
     if total_purchase_price > game_data['gameState']['credits']
       puts "Tried to spend #{cargo_price} but only have #{game_data['gameState']['credits']}"
-      return
+      return game_data
     end
 
     unless Cargos.can_buy(cargo_name, cargo_price)
       puts "Not buying #{cargo_name} at #{cargo_price} because it is above buy price point of #{Cargos.get_price_point(cargo_name)[:buy]}"
-      return
+      return game_data
     end
 
     unless cargo_amt > 0
       puts "Nothing to buy"
-      return
+      return game_data
     end
 
     @prices[cargo_name] = cargo_price
-    @transactions << {:type => 'purchase', :name => cargo_name, :price => cargo_price}
+    @transactions << {:type => 'purchase', :name => cargo_name, :price => cargo_price, :amount => cargo_amt}
 
     transaction_data = {side: 'buy'}
     transaction_data[cargo_name] = cargo_amt
@@ -113,8 +114,8 @@ class Transactions
       elsif value > 0
         if Cargos.can_sell(cargo_name, cargo_price)
           transaction_data[cargo_name] = value
-          puts "Selling #{cargo_name} at #{cargo_price} for a total income of #{cargo_price * value} credits"
-          @transactions << {:type => 'sale', :name => cargo_name, :price => cargo_price}
+          puts "Selling #{value} #{cargo_name} at #{cargo_price} for a total income of #{cargo_price * value} credits"
+          @transactions << {:type => 'sale', :name => cargo_name, :price => cargo_price, :amount => value}
         else
           puts "Not selling #{cargo_name} at #{cargo_price} because it is below the `sell` price point of #{Cargos.get_price_point(cargo_name)[:sell]}"
         end
@@ -124,14 +125,13 @@ class Transactions
     # size will be 1 if only `side: sell` exists
     if transaction_data.size == 1
       puts 'Nothing to sell'
-      return
+      return game_data
     end
-
-    puts "Selling cargo: #{transaction_data.to_json}"
 
     market_response = HTTParty.post('https://skysmuggler.com/game/trade', body: {gameId: game_data['gameId'], transaction: transaction_data}.to_json)
 
     puts "Market response for sale: #{market_response}"
+    market_response
   end
 
   def print_history
