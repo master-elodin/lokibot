@@ -36,6 +36,7 @@ class DatabaseConnector
         primary_key :id
         String :game_id
         Boolean :forced_repayment
+        Boolean :forced_repayment_recovered
       end
       puts 'Created new loanshark table'
     end
@@ -50,7 +51,7 @@ class DatabaseConnector
     end
 
     unless DB.table_exists?(:transaction)
-      DB.create_table! :transaction do
+      DB.create_table :transaction do
         primary_key :id
         String :game_id
         String :planet # planet it was purchased on
@@ -63,9 +64,43 @@ class DatabaseConnector
       puts 'Created new transaction table'
     end
 
+    # record EVERY cargo on EVERY planet
+    DB.create_table? :market do
+      primary_key :id
+      String :game_id
+      String :planet
+      String :name
+      Integer :price
+      Integer :turn_number
+    end
+
+    # summarize the cargos for a given game
+    DB.create_table? :market_avg do
+      primary_key :id
+      String :game_id
+      String :name
+      Integer :price
+      Integer :num_times_seen # games won't necessary last 20 turns, so record how many times it was seen
+    end
+
+    DB.create_table? :transaction_meta do
+      primary_key :id
+      String :name # name of cargo
+      Float :avg_price # average price of cargo for every time it was seen
+      Float :avg_price_purchased
+      Float :avg_price_sold
+      Integer :num_times_seen
+      Integer :num_times_purchased
+      Integer :num_times_sold
+    end
+
     @loanshark = DB[:loanshark]
     @score = DB[:score]
     @transaction = DB[:transaction]
+  end
+
+  def get_db
+    DB
   end
 
   def add_transaction(game_id, planet, type, name, amount, price, turn_number)
@@ -84,8 +119,8 @@ class DatabaseConnector
     @score.avg(:final_score).round(2)
   end
 
-  def update_forced_repayment(game_id, did_force_repayment)
-    @loanshark.insert(:game_id => game_id, :forced_repayment => did_force_repayment)
+  def update_forced_repayment(game_id, did_force_repayment, forced_repayment_recovered = false)
+    @loanshark.insert(:game_id => game_id, :forced_repayment => did_force_repayment, :forced_repayment_recovered => forced_repayment_recovered)
   end
 
   def get_percent_forced_repayment
@@ -97,8 +132,19 @@ class DatabaseConnector
         forced_repayments += 1
       end
     end
-    puts "forced=#{forced_repayments} total=#{total_repayments}"
-    ((forced_repayments * 1.0) / (total_repayments * 1.0)).round(2)
+    (((forced_repayments * 1.0) / (total_repayments * 1.0)) * 100.0).round(2)
+  end
+
+  def get_percent_forced_repayment_recovered
+    forced_repayments_recovered = 0
+    total_repayments = 0
+    @loanshark.map([:id, :forced_repayments_recovered]).each do |id, repayment|
+      total_repayments += 1
+      if repayment
+        forced_repayments_recovered += 1
+      end
+    end
+    (((forced_repayments_recovered * 1.0) / (total_repayments * 1.0)) * 100.0).round(2)
   end
 
 end

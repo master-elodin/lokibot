@@ -16,6 +16,26 @@ def create_new_game
   game_data
 end
 
+def summarize_market(game_id)
+  market_combined_prices = {}
+  DATABASE.get_db[:market]
+      .where(:game_id => game_id)
+      .map([:name, :price]).each do |name, price|
+    if market_combined_prices[name].nil?
+      market_combined_prices[name] = {:combined_price => 0, :num_times_seen => 1}
+    end
+    market_combined_prices[name][:combined_price] += price
+    market_combined_prices[name][:num_times_seen] += 1
+  end
+  market_combined_prices.each do |name, value|
+    avg_price = value[:combined_price] / value[:num_times_seen]
+    DATABASE.get_db[:market_avg].insert(:game_id => game_id,
+                                        :name => name,
+                                        :price => avg_price,
+                                        :num_times_seen => value[:num_times_seen])
+  end
+end
+
 def take_turn(game_data, game_transactions = Transactions.new, travel = Travel.new)
 
   game_id = game_data['gameId']
@@ -26,6 +46,19 @@ def take_turn(game_data, game_transactions = Transactions.new, travel = Travel.n
     puts "Repaying loan of #{game_state['loanBalance']}, leaving balance of #{credits_after_repayment}"
     game_data = HTTParty.post('https://skysmuggler.com/game/loanshark',
                               body: {gameId: game_id, transaction: {qty: game_state['loanBalance'], side: "repay"}}.to_json)
+  end
+
+  # --- add market data for current planet
+  current_planet = game_data['gameState']['planet']
+  turn_number = 20 - game_data['gameState']['turnsLeft']
+  game_data['currentMarket'].each do |cargo_name, cargo_price|
+    unless cargo_price.nil?
+      DATABASE.get_db[:market].insert(:game_id => game_id,
+                                      :planet => current_planet,
+                                      :name => cargo_name,
+                                      :price => cargo_price,
+                                      :turn_number => turn_number)
+    end
   end
 
   # --- sell
@@ -51,11 +84,17 @@ def take_turn(game_data, game_transactions = Transactions.new, travel = Travel.n
   puts
 
   game_over = false
-  # TODO: quit if no credits left because loan shark took them and no cargo left either
   if current_credits == 0
-    game_over = true
-    puts 'Putting you out of your misery - you have no credits left'
-    DATABASE.update_forced_repayment(game_id, true)
+    sellable_cargo_value = game_transactions.get_sellable_cargo_value(game_data)
+    forced_repayment_recovered = sellable_cargo_value >= MIN_CREDITS_AFTER_REPAYMENT
+    if not forced_repayment_recovered
+      game_over = true
+      puts 'Putting you out of your misery - you have no credits left and not enough cargo to be worth selling'
+    elsif turns_left > 1
+      puts "You have 0 credits, but you have #{sellable_cargo_value} credits worth of cargo that can be sold"
+      take_turn(game_data, game_transactions, travel)
+    end
+    DATABASE.update_forced_repayment(game_id, true, forced_repayment_recovered)
   else
     if turns_left > 1
       take_turn(game_data, game_transactions, travel)
@@ -81,6 +120,9 @@ def take_turn(game_data, game_transactions = Transactions.new, travel = Travel.n
   end
 
   if game_over
+    # summarize market data for the whole game
+    summarize_market(game_id)
+
     DATABASE.add_final_score(game_id, current_credits)
     game_transactions.get_transactions.each do |transaction|
       DATABASE.add_transaction(game_id, transaction[:planet], transaction[:type], transaction[:name],
@@ -99,6 +141,7 @@ def take_turn(game_data, game_transactions = Transactions.new, travel = Travel.n
     puts "All-time stats"
     puts "Average total score: #{DATABASE.get_average_final_score}"
     puts "Percent games with loanshark forced repayment: #{DATABASE.get_percent_forced_repayment}%"
+    puts "Percent games with loanshark forced repayment recovered: #{DATABASE.get_percent_forced_repayment_recovered}%"
   end
 end
 

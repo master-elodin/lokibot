@@ -7,6 +7,7 @@ class Transactions
   def initialize()
     @prices = {}
     @transactions = []
+    @current_cargo = {}
   end
 
   def buy_cargo(game_data)
@@ -102,6 +103,7 @@ class Transactions
                       :price => cargo_price,
                       :amount => cargo_amt,
                       :turn_number => 20 - game_data['gameState']['turnsLeft']}
+    @current_cargo[cargo_name] = cargo_amt
 
     transaction_data = {side: 'buy'}
     transaction_data[cargo_name] = cargo_amt
@@ -131,6 +133,7 @@ class Transactions
                             :name => cargo_name,
                             :price => cargo_price, :amount => value,
                             :turn_number => 20 - game_data['gameState']['turnsLeft']}
+          @current_cargo[cargo_name] = 0
         else
           puts "Not selling #{cargo_name} at #{cargo_price} because it is below the `sell` price point of #{Cargos.get_price_point(cargo_name)[:sell]}"
         end
@@ -151,6 +154,18 @@ class Transactions
 
   def get_transactions
     @transactions
+  end
+
+  def get_sellable_cargo_value(game_data)
+    potential_credits_from_cargo = 0
+    current_planet = game_data['gameState']['planet']
+    @current_cargo.each do |name, num_onboard|
+      unless Data.is_cargo_banned(name, current_planet)
+        potential_credits_from_cargo += (game_data['currentMarket'][name] * num_onboard)
+      end
+    end
+    puts "You have #{potential_credits_from_cargo} credits of sellable cargo"
+    potential_credits_from_cargo
   end
 
 end
