@@ -28,7 +28,6 @@ class Travel
     credits_after_repayment = game_state['credits'] - game_state['loanBalance']
     if game_state['loanBalance'] > 0 and current_planet != LOAN_SHARK_PLANET and credits_after_repayment > MIN_CREDITS_AFTER_REPAYMENT
       puts "Can repay debt of #{game_state['loanBalance']} - traveling to #{LOAN_SHARK_PLANET}"
-      # TODO: only repay loanshark with a possibility of purchasing cargo afterward
       return LOAN_SHARK_PLANET
     end
 
