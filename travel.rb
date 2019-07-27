@@ -21,10 +21,25 @@ class Travel
   def choose_next_planet(game_data)
     current_planet = game_data['gameState']['planet']
 
-    # TODO: don't travel to a planet with a cargo you have that's banned unless the potential value of other non-banned cargos is greater
+    # don't travel to a planet with a cargo you have that's banned unless the potential value of other non-banned cargos is greater
+    possible_planets = []
+    get_possible_travel_planets(current_planet).each do |planet|
+      have_banned_cargo = false
+      game_data['gameState']['currentHold'].each do |cargo_name, cargo_amt|
+        if cargo_amt > 0 and Data.is_cargo_banned(cargo_name, planet)
+          have_banned_cargo = true
+          puts "Avoiding #{planet} because #{cargo_name} is banned there"
+          break
+        end
+      end
+
+      unless have_banned_cargo
+        possible_planets << planet
+      end
+    end
+
     # TODO: repay loanshark
     # TODO: buy more bays
-    possible_planets = get_possible_travel_planets(current_planet)
     possible_planets.at(rand(possible_planets.length))
   end
 

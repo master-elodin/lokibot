@@ -6,9 +6,16 @@ class Transactions
 
   def initialize()
     @prices = {}
+    @transactions = []
   end
 
   def buy_cargo(game_data)
+    # don't over-buy
+    if game_data['gameState']['totalBays'] - game_data['gameState']['usedBays'] == 0
+      puts "No space to buy cargo"
+      return
+    end
+
     possible_cargos = []
     current_credits = game_data['gameState']['credits']
     game_data['currentMarket'].each do |cargo_name, cargo_price|
@@ -24,17 +31,22 @@ class Transactions
     end
 
     # sort by price differential to get the best potential value
-    possible_cargos.sort {|a, b| Cargos.price_differential(a[:cargo_name]) <=> Cargos.price_differential(b[:cargo_name])}
+    possible_cargos.sort {|a, b| Cargos.price_differential(b[:cargo_name]) <=> Cargos.price_differential(a[:cargo_name])}
     puts "Possible cargo: #{possible_cargos}"
 
     credits_left = current_credits
+    num_open_bays = game_data['gameState']['totalBays'] - game_data['gameState']['usedBays']
     possible_cargos.each do |cargo|
       puts "#{credits_left} credits left"
-      if credits_left > 0
+      if credits_left >= cargo[:cargo_price] and num_open_bays > 0
         puts "Going to purchase #{cargo[:cargo_name]}..."
-        updated_game_data = buy_single_cargo(game_data, cargo[:cargo_name], 'max')
-        unless updated_game_data.nil?
-          credits_left = updated_game_data['gameState']['credits']
+        game_data = buy_single_cargo(game_data, cargo[:cargo_name], 'max')
+        if game_data.nil?
+          puts "Didn't receive response for cargo"
+          break
+        else
+          credits_left = game_data['gameState']['credits']
+          num_open_bays = game_data['gameState']['totalBays'] - game_data['gameState']['usedBays']
         end
       else
         break
@@ -78,6 +90,7 @@ class Transactions
     end
 
     @prices[cargo_name] = cargo_price
+    @transactions << {:type => 'purchase', :name => cargo_name, :price => cargo_price}
 
     transaction_data = {side: 'buy'}
     transaction_data[cargo_name] = cargo_amt
@@ -90,15 +103,18 @@ class Transactions
   end
 
   def sell_cargo(game_data)
+    # TODO: sell cargo if lower price differential if possible to buy higher differential if there was space
+
     transaction_data = {side: 'sell'}
     game_data['gameState']['currentHold'].each do |cargo_name, value|
       cargo_price = game_data['currentMarket'][cargo_name]
-      if Data.is_cargo_banned(cargo_name, game_data['gameState']['planet'])
+      if value > 0 and Data.is_cargo_banned(cargo_name, game_data['gameState']['planet'])
         puts "Cannot sell `#{cargo_name}` on #{game_data['gameState']['planet']}"
       elsif value > 0
         if Cargos.can_sell(cargo_name, cargo_price)
           transaction_data[cargo_name] = value
           puts "Selling #{cargo_name} at #{cargo_price} for a total income of #{cargo_price * value} credits"
+          @transactions << {:type => 'sale', :name => cargo_name, :price => cargo_price}
         else
           puts "Not selling #{cargo_name} at #{cargo_price} because it is below the `sell` price point of #{Cargos.get_price_point(cargo_name)[:sell]}"
         end
@@ -116,6 +132,12 @@ class Transactions
     market_response = HTTParty.post('https://skysmuggler.com/game/trade', body: {gameId: game_data['gameId'], transaction: transaction_data}.to_json)
 
     puts "Market response for sale: #{market_response}"
+  end
+
+  def print_history
+    @transactions.each do |transaction|
+      puts transaction.to_json
+    end
   end
 
 end

@@ -2,7 +2,7 @@ require 'httparty'
 require_relative 'transactions'
 require_relative 'travel'
 
-TURN_CUTOFF = 15
+TURN_CUTOFF = 12
 
 def create_new_game
   game_data = HTTParty.get('https://skysmuggler.com/game/new_game').parsed_response
@@ -24,7 +24,7 @@ def take_turn(game_data, game_transactions = Transactions.new, travel = Travel.n
   # --- travel
   game_data = travel.travel(game_data)
 
-  # TODO: handle notifications
+  # handle notifications
   unless game_data['notifications'].nil? or game_data['notifications'].length == 0
     puts "notifications: #{game_data['notifications']}"
   end
@@ -40,6 +40,8 @@ def take_turn(game_data, game_transactions = Transactions.new, travel = Travel.n
   else
     puts "You made #{current_credits - 20000} credits this game"
     puts "You traveled to these planets: #{travel.get_planets_traveled_to}"
+    puts "You made these transactions:"
+    game_transactions.print_history
   end
 end
 
