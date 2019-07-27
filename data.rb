@@ -88,10 +88,14 @@ class DatabaseConnector
       String :name # name of cargo
       Float :avg_price # average price of cargo for every time it was seen
       Float :avg_price_purchased
+      Float :avg_amt_purchased
       Float :avg_price_sold
+      Float :avg_amt_sold
       Integer :num_times_seen
       Integer :num_times_purchased
+      Integer :total_amt_purchased
       Integer :num_times_sold
+      Integer :total_amt_sold
     end
 
     @loanshark = DB[:loanshark]

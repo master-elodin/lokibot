@@ -22,25 +22,70 @@ def update_market_meta
   starting = Process.clock_gettime(Process::CLOCK_MONOTONIC)
 
   new_meta = {}
+
+  # get market averages for each game
   DATABASE.get_db[:market_avg].all.each do |row|
     cargo_name = row[:name]
     if new_meta[cargo_name].nil?
-      new_meta[cargo_name] = {:total_price => 0, :total_num_times_seen => 0, :num_averages => 0}
+      new_meta[cargo_name] = {:total_price => 0,
+                              :total_num_times_seen => 0,
+                              :num_averages => 0,
+                              :total_price_purchased => 0,
+                              :total_amt_purchased => 0,
+                              :total_num_times_purchased => 0,
+                              :total_price_sold => 0,
+                              :total_amt_sold => 0,
+                              :total_num_times_sold => 0}
     end
     new_meta[cargo_name][:total_price] += row[:price]
     new_meta[cargo_name][:total_num_times_seen] += row[:num_times_seen]
     new_meta[cargo_name][:num_averages] += 1
   end
+
+  # get average transaction data (checks ALL transactions right now)
+  DATABASE.get_db[:transaction].all.each do |row|
+    cargo_name = row[:name]
+    cargo_meta = new_meta[cargo_name]
+
+    if row[:type] == 'purchase'
+      # -- purchase
+      cargo_meta[:total_price_purchased] += row[:price]
+      cargo_meta[:total_amt_purchased] += row[:amount]
+      cargo_meta[:total_num_times_purchased] += 1
+    else
+      # -- sale
+      cargo_meta[:total_price_sold] += row[:price]
+      cargo_meta[:total_amt_sold] += row[:amount]
+      cargo_meta[:total_num_times_sold] += 1
+    end
+
+  end
+
+  # TODO: fix transaction table
+  # alter table main."transaction" DROP COLUMN avg_amt_purchased;
+  # alter table main."transaction" DROP COLUMN avg_amt_sold;
+  # alter table main."transaction" DROP COLUMN total_amt_purchased;
+  # alter table main."transaction" DROP COLUMN total_amt_sold;
+
+  # update transaction meta (data averaging for every game)
   new_meta.each do |cargo_name, value|
     DATABASE.get_db[:transaction_meta].where(:name => cargo_name).delete
     DATABASE.get_db[:transaction_meta]
         .insert(:name => cargo_name,
                 :avg_price => value[:total_price] / value[:num_averages],
-                :avg_price_purchased => 0,
-                :avg_price_sold => 0,
                 :num_times_seen => value[:total_num_times_seen],
-                :num_times_purchased => 0,
-                :num_times_sold => 0)
+                # purchase
+                :total_amt_purchased => value[:total_amt_purchased],
+                :num_times_purchased => value[:total_num_times_purchased],
+                :avg_price_purchased => value[:total_price_purchased] / value[:total_num_times_purchased],
+                :avg_amt_purchased => value[:total_amt_purchased] / value[:total_num_times_purchased],
+                # sale
+                :total_amt_sold => value[:total_amt_sold],
+                :num_times_sold => value[:total_num_times_sold],
+                :avg_price_sold => value[:total_price_sold] / value[:total_num_times_sold],
+                :avg_amt_sold => value[:total_amt_sold] / value[:total_num_times_sold])
+    # TODO: add diff between number purchased and sold
+    # TODO: add diff between average purchase price and average sale price
   end
 
   ending = Process.clock_gettime(Process::CLOCK_MONOTONIC)
