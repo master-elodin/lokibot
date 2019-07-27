@@ -72,9 +72,9 @@ def take_turn(game_data, game_transactions = Transactions.new, travel = Travel.n
         else
           puts "Not a high score"
         end
-        # https://skysmuggler.com/scores/list?length=10&scoreType[]=allTime&scoreType[]=weekly
       else
         puts 'Submitting scores is turned off'
+        puts
       end
 
     end
@@ -82,11 +82,18 @@ def take_turn(game_data, game_transactions = Transactions.new, travel = Travel.n
 
   if game_over
     DATABASE.add_final_score(game_id, current_credits)
+    game_transactions.get_transactions.each do |transaction|
+      DATABASE.add_transaction(game_id, transaction[:planet], transaction[:type], transaction[:name],
+                               transaction[:amount], transaction[:price], transaction[:turn_number])
+    end
 
-    puts "You made #{current_credits - 20000} credits this game"
     puts "You traveled to these planets: #{travel.get_planets_traveled_to}"
     puts "You made these transactions:"
-    game_transactions.print_history
+    transactions_for_game = DATABASE.get_transaction_list(game_id)
+    transactions_for_game.each do |transaction|
+      puts transaction.to_json
+    end
+    puts "You made #{current_credits - 20000} credits this game"
 
     puts
     puts "All-time stats"

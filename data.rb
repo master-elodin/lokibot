@@ -49,8 +49,31 @@ class DatabaseConnector
       puts 'Created new score table'
     end
 
+    unless DB.table_exists?(:transaction)
+      DB.create_table! :transaction do
+        primary_key :id
+        String :game_id
+        String :planet # planet it was purchased on
+        String :type # purchase/sale
+        String :name # e.g. water, metal
+        Integer :amount # amount of the cargo purchased
+        Integer :price # price per cargo
+        Integer :turn_number
+      end
+      puts 'Created new transaction table'
+    end
+
     @loanshark = DB[:loanshark]
     @score = DB[:score]
+    @transaction = DB[:transaction]
+  end
+
+  def add_transaction(game_id, planet, type, name, amount, price, turn_number)
+    @transaction.insert(:game_id => game_id, :planet => planet, :type => type, :name => name, :amount => amount, :price => price, :turn_number => turn_number)
+  end
+
+  def get_transaction_list(game_id)
+    @transaction.where(:game_id => game_id).map([:planet, :type, :name, :amount, :price, :turn_number])
   end
 
   def add_final_score(game_id, final_score)

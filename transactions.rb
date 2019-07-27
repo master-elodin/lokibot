@@ -96,7 +96,12 @@ class Transactions
     end
 
     @prices[cargo_name] = cargo_price
-    @transactions << {:type => 'purchase', :name => cargo_name, :price => cargo_price, :amount => cargo_amt}
+    @transactions << {:type => 'purchase',
+                      :planet => game_data['gameState']['planet'],
+                      :name => cargo_name,
+                      :price => cargo_price,
+                      :amount => cargo_amt,
+                      :turn_number => 20 - game_data['gameState']['turnsLeft']}
 
     transaction_data = {side: 'buy'}
     transaction_data[cargo_name] = cargo_amt
@@ -121,7 +126,11 @@ class Transactions
         if Cargos.can_sell(cargo_name, cargo_price) || is_last_turn
           transaction_data[cargo_name] = value
           puts "Selling #{value} #{cargo_name} at #{cargo_price} for a total income of #{cargo_price * value} credits"
-          @transactions << {:type => 'sale', :name => cargo_name, :price => cargo_price, :amount => value}
+          @transactions << {:type => 'sale',
+                            :planet => game_data['gameState']['planet'],
+                            :name => cargo_name,
+                            :price => cargo_price, :amount => value,
+                            :turn_number => 20 - game_data['gameState']['turnsLeft']}
         else
           puts "Not selling #{cargo_name} at #{cargo_price} because it is below the `sell` price point of #{Cargos.get_price_point(cargo_name)[:sell]}"
         end
@@ -140,10 +149,8 @@ class Transactions
     market_response
   end
 
-  def print_history
-    @transactions.each do |transaction|
-      puts transaction.to_json
-    end
+  def get_transactions
+    @transactions
   end
 
 end
