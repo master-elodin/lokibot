@@ -1,5 +1,5 @@
 # LokiBot
-Loki - the trickster
+Bot that plays Sky Smuggler
 
 ## Running
 
