@@ -16,6 +16,38 @@ def create_new_game
   game_data
 end
 
+# summarize all the data from all the games
+def update_market_meta
+  puts 'Updating market meta...'
+  starting = Process.clock_gettime(Process::CLOCK_MONOTONIC)
+
+  new_meta = {}
+  DATABASE.get_db[:market_avg].all.each do |row|
+    cargo_name = row[:name]
+    if new_meta[cargo_name].nil?
+      new_meta[cargo_name] = {:total_price => 0, :total_num_times_seen => 0, :num_averages => 0}
+    end
+    new_meta[cargo_name][:total_price] += row[:price]
+    new_meta[cargo_name][:total_num_times_seen] += row[:num_times_seen]
+    new_meta[cargo_name][:num_averages] += 1
+  end
+  new_meta.each do |cargo_name, value|
+    DATABASE.get_db[:transaction_meta].where(:name => cargo_name).delete
+    DATABASE.get_db[:transaction_meta]
+        .insert(:name => cargo_name,
+                :avg_price => value[:total_price] / value[:num_averages],
+                :avg_price_purchased => 0,
+                :avg_price_sold => 0,
+                :num_times_seen => value[:total_num_times_seen],
+                :num_times_purchased => 0,
+                :num_times_sold => 0)
+  end
+
+  ending = Process.clock_gettime(Process::CLOCK_MONOTONIC)
+  puts "Finished updating market meta in #{((ending - starting) * 1000).round(3)} milliseconds"
+  puts
+end
+
 def summarize_market(game_id)
   market_combined_prices = {}
   DATABASE.get_db[:market]
@@ -34,6 +66,8 @@ def summarize_market(game_id)
                                         :price => avg_price,
                                         :num_times_seen => value[:num_times_seen])
   end
+
+  update_market_meta
 end
 
 def take_turn(game_data, game_transactions = Transactions.new, travel = Travel.new)
