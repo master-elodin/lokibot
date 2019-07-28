@@ -115,6 +115,22 @@ def summarize_market(game_id)
   update_market_meta
 end
 
+def submit_score(game_data)
+  if SHOULD_SUBMIT_SCORE
+    score_response = HTTParty.post('https://skysmuggler.com/scores/submit', body: {gameId: game_data['gameId'], name: 'joe rebel'}.to_json)
+
+    puts "Score response: #{score_response}"
+    if score_response['message'] == 'New high score!'
+      HTTParty.post('https://skysmuggler.com/scores/update_name', body: {gameId: game_data['gameId'], newName: SCORE_NAME}.to_json)
+    else
+      puts "Not a high score"
+    end
+  else
+    puts 'Submitting scores is turned off'
+    puts
+  end
+end
+
 def take_turn(game_data, game_transactions = Transactions.new, travel = Travel.new)
 
   game_id = game_data['gameId']
@@ -152,6 +168,7 @@ def take_turn(game_data, game_transactions = Transactions.new, travel = Travel.n
   # --- buy
   game_data = game_transactions.buy_cargo(game_data)
 
+  # TODO: shipyard
   # TODO: bank
 
   # --- travel
@@ -190,21 +207,7 @@ def take_turn(game_data, game_transactions = Transactions.new, travel = Travel.n
       take_turn(game_data, game_transactions, travel)
     else
       game_over = true
-
-      if SHOULD_SUBMIT_SCORE
-        score_response = HTTParty.post('https://skysmuggler.com/scores/submit', body: {gameId: game_data['gameId'], name: 'joe rebel'}.to_json)
-
-        puts "Score response: #{score_response}"
-        if score_response['message'] == 'New high score!'
-          HTTParty.post('https://skysmuggler.com/scores/update_name', body: {gameId: game_data['gameId'], newName: SCORE_NAME}.to_json)
-        else
-          puts "Not a high score"
-        end
-      else
-        puts 'Submitting scores is turned off'
-        puts
-      end
-
+      submit_score(game_data)
     end
   end
 

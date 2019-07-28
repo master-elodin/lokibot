@@ -126,28 +126,18 @@ class DatabaseConnector
     @score.avg(:final_score).round(2)
   end
 
+  def get_total_repayment_count
+    @loanshark.count
+  end
+
   def get_percent_forced_repayment
-    forced_repayments = 0
-    total_repayments = 0
-    @loanshark.map([:id, :forced_repayment]).each do |id, repayment|
-      total_repayments += 1
-      if repayment
-        forced_repayments += 1
-      end
-    end
-    (((forced_repayments * 1.0) / (total_repayments * 1.0)) * 100.0).round(2)
+    forced_repayments = @loanshark.where(:forced_repayment => true)
+    (((forced_repayments.count * 1.0) / (get_total_repayment_count * 1.0)) * 100.0).round(2)
   end
 
   def get_percent_forced_repayment_recovered
-    forced_repayments_recovered = 0
-    total_repayments = 0
-    @loanshark.map([:id, :forced_repayments_recovered]).each do |id, repayment|
-      total_repayments += 1
-      if repayment
-        forced_repayments_recovered += 1
-      end
-    end
-    (((forced_repayments_recovered * 1.0) / (total_repayments * 1.0)) * 100.0).round(2)
+    forced_repayments_recovered = @loanshark.where(:forced_repayment_recovered => true)
+    (((forced_repayments_recovered.count * 1.0) / (get_total_repayment_count * 1.0)) * 100.0).round(2)
   end
 
 end
