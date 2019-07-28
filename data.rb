@@ -104,6 +104,13 @@ class DatabaseConnector
       Integer :total_amt_sold
     end
 
+    DB.create_table? :travel do
+      primary_key :id
+      String :game_id
+      String :planet
+      Integer :turn_number
+    end
+
     @loanshark = DB[:loanshark]
     @score = DB[:score]
     @transaction = DB[:transaction]

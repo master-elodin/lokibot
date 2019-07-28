@@ -3,46 +3,41 @@ class Travel
   LOAN_SHARK_PLANET = 'umbriel'
   MIN_CREDITS_AFTER_REPAYMENT = 10000
 
-  def initialize
-    @planets_traveled_to = []
+  def initialize(game, database)
+    @game = game
+    @database = database
   end
 
-  def get_planets_traveled_to
-    @planets_traveled_to
-  end
-
-  def travel(game_data)
-    if game_data['gameState']['turnsLeft'] == 1
+  def travel
+    if @game.turns_left == 1
       puts "Not traveling on last turn"
-      return game_data
+      return
     end
 
-    game_id = game_data['gameId']
-    to_planet = choose_next_planet(game_data)
-
-    @planets_traveled_to << to_planet
+    to_planet = choose_next_planet
 
     puts "traveling to #{to_planet}"
-    HTTParty.post('https://skysmuggler.com/game/travel', body: {gameId: game_id, toPlanet: to_planet}.to_json)
+    @game.take_action('travel', {toPlanet: to_planet})
+
+    @database.get_db[:travel].insert(:game_id => @game.id,
+                                     :planet => @game.current_planet,
+                                     :turn_number => @game.current_turn)
   end
 
-  def choose_next_planet(game_data)
-    game_state = game_data['gameState']
-    current_planet = game_state['planet']
-
-    credits_after_repayment = game_state['credits'] - game_state['loanBalance']
-    if game_state['loanBalance'] > 0 and current_planet != LOAN_SHARK_PLANET and credits_after_repayment > MIN_CREDITS_AFTER_REPAYMENT
-      puts "Can repay debt of #{game_state['loanBalance']} - traveling to #{LOAN_SHARK_PLANET}"
+  def choose_next_planet
+    credits_after_repayment = @game.current_credits - @game.loan_balance
+    if @game.loan_balance > 0 and @game.current_planet != LOAN_SHARK_PLANET and credits_after_repayment > MIN_CREDITS_AFTER_REPAYMENT
+      puts "Can repay debt of #{@game.loan_balance} - traveling to #{LOAN_SHARK_PLANET}"
       return LOAN_SHARK_PLANET
     end
 
     # TODO: buy more bays
 
-    # don't travel to a planet with a cargo you have that's banned unless the potential value of other non-banned cargos is greater
+    # TODO: don't travel to a planet with a cargo you have that's banned unless the potential value of other non-banned cargos is greater
     possible_planets = []
-    get_possible_travel_planets(current_planet).each do |planet|
+    get_possible_travel_planets(@game.current_planet).each do |planet|
       have_banned_cargo = false
-      game_state['currentHold'].each do |cargo_name, cargo_amt|
+      @game.game_state['currentHold'].each do |cargo_name, cargo_amt|
         if cargo_amt > 0 and Data.is_cargo_banned(cargo_name, planet)
           have_banned_cargo = true
           puts "Avoiding #{planet} because #{cargo_name} is banned there"
