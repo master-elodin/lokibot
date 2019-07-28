@@ -120,11 +120,17 @@ def take_turn(game_data, game_transactions = Transactions.new, travel = Travel.n
   game_id = game_data['gameId']
 
   game_state = game_data['gameState']
-  credits_after_repayment = game_state['credits'] - game_state['loanBalance']
+  loan_amt_start_turn = game_state['loanBalance']
+  credits_after_repayment = game_state['credits'] - loan_amt_start_turn
   if game_state['loanBalance'] > 0 and game_state['planet'] == LOAN_SHARK_PLANET and credits_after_repayment > MIN_CREDITS_AFTER_REPAYMENT
     puts "Repaying loan of #{game_state['loanBalance']}, leaving balance of #{credits_after_repayment}"
     game_data = HTTParty.post('https://skysmuggler.com/game/loanshark',
                               body: {gameId: game_id, transaction: {qty: game_state['loanBalance'], side: "repay"}}.to_json)
+    DATABASE.get_db[:loanshark].insert(:game_id => game_id,
+                                       :forced_repayment => false,
+                                       :forced_repayment_recovered => false,
+                                       :loan_amt_repaid => loan_amt_start_turn,
+                                       :turn_repaid => 20 - game_data['gameState']['turnsLeft'])
   end
 
   # --- add market data for current planet
@@ -173,13 +179,17 @@ def take_turn(game_data, game_transactions = Transactions.new, travel = Travel.n
       puts "You have 0 credits, but you have #{sellable_cargo_value} credits worth of cargo that can be sold"
       take_turn(game_data, game_transactions, travel)
     end
-    DATABASE.update_forced_repayment(game_id, true, forced_repayment_recovered)
+    # TODO: might get to 0 credits without the loanshark taking his money back, but unlikely to be exactly 0
+    DATABASE.get_db[:loanshark].insert(:game_id => game_id,
+                                       :forced_repayment => true,
+                                       :forced_repayment_recovered => forced_repayment_recovered,
+                                       :loan_amt_repaid => loan_amt_start_turn,
+                                       :turn_repaid => 20 - game_data['gameState']['turnsLeft'])
   else
     if turns_left > 1
       take_turn(game_data, game_transactions, travel)
     else
       game_over = true
-      DATABASE.update_forced_repayment(game_id, false)
 
       if SHOULD_SUBMIT_SCORE
         score_response = HTTParty.post('https://skysmuggler.com/scores/submit', body: {gameId: game_data['gameId'], name: 'joe rebel'}.to_json)

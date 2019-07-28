@@ -37,6 +37,9 @@ class DatabaseConnector
         String :game_id
         Boolean :forced_repayment
         Boolean :forced_repayment_recovered
+        # TODO: remove incorrect columns `loan_amt_repayed` and `turn_repayed` - stupid typos
+        Integer :loan_amt_repaid
+        Integer :turn_repaid
       end
       puts 'Created new loanshark table'
     end
@@ -121,10 +124,6 @@ class DatabaseConnector
 
   def get_average_final_score
     @score.avg(:final_score).round(2)
-  end
-
-  def update_forced_repayment(game_id, did_force_repayment, forced_repayment_recovered = false)
-    @loanshark.insert(:game_id => game_id, :forced_repayment => did_force_repayment, :forced_repayment_recovered => forced_repayment_recovered)
   end
 
   def get_percent_forced_repayment
