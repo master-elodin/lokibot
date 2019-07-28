@@ -156,6 +156,10 @@ class Transactions
     @transactions
   end
 
+  def get_cargo
+    @current_cargo
+  end
+
   def get_sellable_cargo_value(game_data)
     potential_credits_from_cargo = 0
     current_planet = game_data['gameState']['planet']

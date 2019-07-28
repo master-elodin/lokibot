@@ -115,6 +115,23 @@ def summarize_market(game_id)
   update_market_meta
 end
 
+def add_final_score(game_data, final_cargo)
+  cargo_names = []
+  cargo_count = 0
+  final_cargo.each do |name, numOnBoard|
+    cargo_count += numOnBoard
+    if numOnBoard > 0
+      cargo_names << name
+    end
+  end
+  cargo_count
+  DATABASE.get_db[:score].insert(:game_id => game_data['gameId'],
+                                 :final_score => game_data['gameState']['credits'],
+                                 :unsold_cargo => cargo_count > 0,
+                                 :unsold_cargo_name => cargo_names.to_json,
+                                 :final_planet => game_data['gameState']['planet'])
+end
+
 def submit_score(game_data)
   if SHOULD_SUBMIT_SCORE
     score_response = HTTParty.post('https://skysmuggler.com/scores/submit', body: {gameId: game_data['gameId'], name: 'joe rebel'}.to_json)
@@ -170,6 +187,7 @@ def take_turn(game_data, game_transactions = Transactions.new, travel = Travel.n
 
   # TODO: shipyard
   # TODO: bank
+  # TODO: record notifications
 
   # --- travel
   game_data = travel.travel(game_data)
@@ -206,6 +224,9 @@ def take_turn(game_data, game_transactions = Transactions.new, travel = Travel.n
     if turns_left > 1
       take_turn(game_data, game_transactions, travel)
     else
+      # sell everything on board
+      game_data = game_transactions.sell_cargo(game_data)
+
       game_over = true
       submit_score(game_data)
     end
@@ -215,7 +236,8 @@ def take_turn(game_data, game_transactions = Transactions.new, travel = Travel.n
     # summarize market data for the whole game
     summarize_market(game_id)
 
-    DATABASE.add_final_score(game_id, current_credits)
+    add_final_score(game_data, game_transactions.get_cargo)
+
     game_transactions.get_transactions.each do |transaction|
       DATABASE.add_transaction(game_id, transaction[:planet], transaction[:type], transaction[:name],
                                transaction[:amount], transaction[:price], transaction[:turn_number])

@@ -49,6 +49,9 @@ class DatabaseConnector
         primary_key :id
         String :game_id
         Integer :final_score
+        Boolean :unsold_cargo
+        String :unsold_cargo_name
+        String :final_planet
       end
       puts 'Created new score table'
     end
@@ -118,8 +121,12 @@ class DatabaseConnector
     @transaction.where(:game_id => game_id).map([:planet, :type, :name, :amount, :price, :turn_number])
   end
 
-  def add_final_score(game_id, final_score)
-    @score.insert(:game_id => game_id, :final_score => final_score)
+  def add_final_score(game_id, final_score, unsold_cargo)
+    @score.insert(:game_id => game_id,
+                  :final_score => final_score,
+                  :unsold_cargo => unsold_cargo,
+                  :unsold_cargo_name => unsold_cargo_name,
+                  :final_planet => final_planet)
   end
 
   def get_average_final_score
