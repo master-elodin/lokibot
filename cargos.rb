@@ -1,3 +1,4 @@
+# TODO: move into market.rb
 class Cargos
 
   def self.price_points

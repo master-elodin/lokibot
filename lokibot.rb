@@ -1,20 +1,11 @@
 require 'httparty'
-require_relative 'transactions'
-require_relative 'travel'
+require_relative 'data'
+require_relative 'game'
 
-LOAN_SHARK_PLANET = 'umbriel'
-MIN_CREDITS_AFTER_REPAYMENT = 10000
 SCORE_NAME = 'Loki'
-
 SHOULD_SUBMIT_SCORE = false
 
 DATABASE = DatabaseConnector.new
-
-def create_new_game
-  game_data = HTTParty.get('https://skysmuggler.com/game/new_game').parsed_response
-  puts "Game ID: #{game_data['gameId']}"
-  game_data
-end
 
 # summarize all the data from all the games
 def update_market_meta
@@ -115,30 +106,30 @@ def summarize_market(game_id)
   update_market_meta
 end
 
-def add_final_score(game_data, final_cargo)
+def add_final_score(game)
   cargo_names = []
   cargo_count = 0
-  final_cargo.each do |name, numOnBoard|
+  game.market.current_hold.each do |name, numOnBoard|
     cargo_count += numOnBoard
     if numOnBoard > 0
       cargo_names << name
     end
   end
-  cargo_count
-  DATABASE.get_db[:score].insert(:game_id => game_data['gameId'],
-                                 :final_score => game_data['gameState']['credits'],
+
+  DATABASE.get_db[:score].insert(:game_id => game.id,
+                                 :final_score => game.current_credits,
                                  :unsold_cargo => cargo_count > 0,
                                  :unsold_cargo_name => cargo_names.to_json,
-                                 :final_planet => game_data['gameState']['planet'])
+                                 :final_planet => game.current_planet)
 end
 
-def submit_score(game_data)
+def submit_score(game)
   if SHOULD_SUBMIT_SCORE
-    score_response = HTTParty.post('https://skysmuggler.com/scores/submit', body: {gameId: game_data['gameId'], name: 'joe rebel'}.to_json)
+    score_response = HTTParty.post('https://skysmuggler.com/scores/submit', body: {gameId: game.id, name: 'joe rebel'}.to_json)
 
     puts "Score response: #{score_response}"
     if score_response['message'] == 'New high score!'
-      HTTParty.post('https://skysmuggler.com/scores/update_name', body: {gameId: game_data['gameId'], newName: SCORE_NAME}.to_json)
+      HTTParty.post('https://skysmuggler.com/scores/update_name', body: {gameId: game.id, newName: SCORE_NAME}.to_json)
     else
       puts "Not a high score"
     end
@@ -148,108 +139,71 @@ def submit_score(game_data)
   end
 end
 
-def take_turn(game_data, game_transactions = Transactions.new, travel = Travel.new)
+def take_turn(game = Game.new(DATABASE))
 
-  game_id = game_data['gameId']
+  game.market.record_current_market
 
-  game_state = game_data['gameState']
-  loan_amt_start_turn = game_state['loanBalance']
-  credits_after_repayment = game_state['credits'] - loan_amt_start_turn
-  if game_state['loanBalance'] > 0 and game_state['planet'] == LOAN_SHARK_PLANET and credits_after_repayment > MIN_CREDITS_AFTER_REPAYMENT
-    puts "Repaying loan of #{game_state['loanBalance']}, leaving balance of #{credits_after_repayment}"
-    game_data = HTTParty.post('https://skysmuggler.com/game/loanshark',
-                              body: {gameId: game_id, transaction: {qty: game_state['loanBalance'], side: "repay"}}.to_json)
-    DATABASE.get_db[:loanshark].insert(:game_id => game_id,
-                                       :forced_repayment => false,
-                                       :forced_repayment_recovered => false,
-                                       :loan_amt_repaid => loan_amt_start_turn,
-                                       :turn_repaid => 20 - game_data['gameState']['turnsLeft'])
-  end
+  loan_amt_start_turn = game.loan_balance
 
-  # --- add market data for current planet
-  current_planet = game_data['gameState']['planet']
-  turn_number = 20 - game_data['gameState']['turnsLeft']
-  game_data['currentMarket'].each do |cargo_name, cargo_price|
-    unless cargo_price.nil?
-      DATABASE.get_db[:market].insert(:game_id => game_id,
-                                      :planet => current_planet,
-                                      :name => cargo_name,
-                                      :price => cargo_price,
-                                      :turn_number => turn_number)
-    end
-  end
-
-  # --- sell
-  game_data = game_transactions.sell_cargo(game_data)
-
-  # --- buy
-  game_data = game_transactions.buy_cargo(game_data)
+  game.repay_loanshark
+  game.market.sell_cargo
+  game.market.buy_cargo
 
   # TODO: shipyard
   # TODO: bank
-  # TODO: record notifications
 
-  # --- travel
-  game_data = travel.travel(game_data)
+  game.travel
 
-  # handle notifications
-  unless game_data['notifications'].nil? or game_data['notifications'].length == 0
-    puts "notifications: #{game_data['notifications']}"
+  # TODO: handle notifications
+  unless game.game_data['notifications'].nil? or game.game_data['notifications'].length == 0
+    puts "notifications: #{game.game_data['notifications']}"
   end
 
-  turns_left = game_data['gameState']['turnsLeft']
-  current_credits = game_data['gameState']['credits']
-  puts "At the end of turn ##{20 - turns_left}, you have #{current_credits} credits"
-  puts "Game data: #{game_data}"
+  puts "At the end of turn ##{game.turns_left}, you have #{game.current_credits} credits"
   puts
 
   game_over = false
-  if current_credits == 0
-    sellable_cargo_value = game_transactions.get_sellable_cargo_value(game_data)
+  if game.current_credits == 0
+    sellable_cargo_value = game.market.get_sellable_cargo_value
     forced_repayment_recovered = sellable_cargo_value >= MIN_CREDITS_AFTER_REPAYMENT
     if not forced_repayment_recovered
       game_over = true
       puts 'Putting you out of your misery - you have no credits left and not enough cargo to be worth selling'
-    elsif turns_left > 1
+    elsif @game.turns_left > 1
       puts "You have 0 credits, but you have #{sellable_cargo_value} credits worth of cargo that can be sold"
-      take_turn(game_data, game_transactions, travel)
+      take_turn(game)
     end
+
     # TODO: might get to 0 credits without the loanshark taking his money back, but unlikely to be exactly 0
-    DATABASE.get_db[:loanshark].insert(:game_id => game_id,
+    DATABASE.get_db[:loanshark].insert(:game_id => game.id,
                                        :forced_repayment => true,
                                        :forced_repayment_recovered => forced_repayment_recovered,
                                        :loan_amt_repaid => loan_amt_start_turn,
-                                       :turn_repaid => 20 - game_data['gameState']['turnsLeft'])
+                                       :turn_repaid => game.current_turn)
   else
-    if turns_left > 1
-      take_turn(game_data, game_transactions, travel)
+    if game.turns_left > 1
+      take_turn(game)
     else
       # sell everything on board
-      game_data = game_transactions.sell_cargo(game_data)
+      game.market.sell_cargo
 
       game_over = true
-      submit_score(game_data)
+      submit_score(game)
     end
   end
 
   if game_over
     # summarize market data for the whole game
-    summarize_market(game_id)
+    summarize_market(game.id)
 
-    add_final_score(game_data, game_transactions.get_cargo)
+    add_final_score(game)
 
-    game_transactions.get_transactions.each do |transaction|
-      DATABASE.add_transaction(game_id, transaction[:planet], transaction[:type], transaction[:name],
-                               transaction[:amount], transaction[:price], transaction[:turn_number])
-    end
-
-    puts "You traveled to these planets: #{travel.get_planets_traveled_to}"
     puts "You made these transactions:"
-    transactions_for_game = DATABASE.get_transaction_list(game_id)
+    transactions_for_game = DATABASE.get_transaction_list(game.id)
     transactions_for_game.each do |transaction|
       puts transaction.to_json
     end
-    puts "You made #{current_credits - 20000} credits this game"
+    puts "You made #{game.current_credits - 20000} credits this game"
 
     puts
     puts "All-time stats"
@@ -260,6 +214,6 @@ def take_turn(game_data, game_transactions = Transactions.new, travel = Travel.n
 end
 
 starting = Process.clock_gettime(Process::CLOCK_MONOTONIC)
-take_turn(create_new_game)
+take_turn
 ending = Process.clock_gettime(Process::CLOCK_MONOTONIC)
 puts "Completed game in #{((ending - starting) * 1000).round(3)} milliseconds"
