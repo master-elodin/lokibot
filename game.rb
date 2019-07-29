@@ -7,7 +7,7 @@ MIN_CREDITS_AFTER_REPAYMENT = 10000
 
 class Game
 
-  attr_reader :id, :game_data, :market, :db
+  attr_reader :id, :game_data, :market, :db, :current_market_low, :current_market_high
 
   def initialize(database)
     puts 'Starting new game...'

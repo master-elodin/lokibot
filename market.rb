@@ -54,16 +54,33 @@ class Market
     puts 'Selling cargo...'
     # TODO: sell cargo if lower price differential if possible to buy higher differential if there was space
 
+    market_low_price_cargo = @game.current_market_low
+    if market_low_price_cargo.length > 0
+      low_price_cargo_differential = Cargos.price_differential(market_low_price_cargo, current_market[market_low_price_cargo])
+    else
+      low_price_cargo_differential = -1
+    end
+
     transaction_data = {side: 'sell'}
     current_hold.each do |cargo_name, value|
       cargo_price = current_market[cargo_name]
       if value > 0 and Data.is_cargo_banned(cargo_name, @game.current_planet)
         puts "Cannot sell `#{cargo_name}` on #{@game.current_planet}"
+      elsif market_low_price_cargo == cargo_name
+        puts "Not selling #{value} #{cargo_name} because it's at a super low price (#{cargo_price}) right now"
       elsif value > 0
         is_last_turn = @game.turns_left == 1
-        if Cargos.can_sell(cargo_name, cargo_price) || is_last_turn
+
+        # if another cargo is currently having a low-price market event, sell whatever possible to buy it AS LONG AS the price differential is better
+        sell_to_buy_low_price_cargo = market_low_price_cargo.length > 0 && low_price_cargo_differential > Cargos.price_differential(cargo_name, cargo_price)
+
+        if Cargos.can_sell(cargo_name, cargo_price) || is_last_turn || sell_to_buy_low_price_cargo
           transaction_data[cargo_name] = value
-          puts "Selling #{value} #{cargo_name} at #{cargo_price} for a total income of #{cargo_price * value} credits"
+          if sell_to_buy_low_price_cargo
+            puts "Selling #{value} #{cargo_name} at #{cargo_price} to buy #{market_low_price_cargo} at #{current_market[market_low_price_cargo]}"
+          else
+            puts "Selling #{value} #{cargo_name} at #{cargo_price} for a total income of #{cargo_price * value} credits"
+          end
 
           record_transaction('sale', cargo_name, value, cargo_price)
         else
@@ -107,8 +124,10 @@ class Market
     end
 
     # sort by price differential to get the best potential value
-    # TODO: this isn't a correct cargo sort - [{:cargo_name=>"water", :cargo_price=>14921}, {:cargo_name=>"weapons", :cargo_price=>22427}]
-    possible_cargos.sort {|a, b| Cargos.price_differential(b[:cargo_name], b[:cargo_price]) <=> Cargos.price_differential(a[:cargo_name], a[:cargo_price])}
+    possible_cargos.sort! do |a, b|
+      Cargos.price_differential(b[:cargo_name], b[:cargo_price]) <=> Cargos.price_differential(a[:cargo_name], a[:cargo_price])
+    end
+
     puts "Possible cargo: #{possible_cargos}"
 
     possible_cargos.each do |cargo|
