@@ -69,7 +69,7 @@ class Market
       end
     end
     price_differentials.sort! do |a, b|
-      b[:price] <=> a[:price]
+      b[:profit] <=> a[:profit]
     end
 
     transaction_data = {side: 'sell'}
