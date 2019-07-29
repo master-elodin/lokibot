@@ -33,21 +33,19 @@ class Travel
 
     # TODO: buy more bays
 
-    # TODO: don't travel to a planet with a cargo you have that's banned unless the potential value of other non-banned cargos is greater
-    possible_planets = []
-    get_possible_travel_planets(@game.current_planet).each do |planet|
-      have_banned_cargo = false
-      @game.game_state['currentHold'].each do |cargo_name, cargo_amt|
-        if cargo_amt > 0 and Data.is_cargo_banned(cargo_name, planet)
-          have_banned_cargo = true
-          puts "Avoiding #{planet} because #{cargo_name} is banned there"
-          break
-        end
-      end
+    possible_planets = get_possible_travel_planets(@game.current_planet).sort do |a, b|
+      possible_cargo_value(b) <=> possible_cargo_value(a)
+    end
 
-      unless have_banned_cargo
-        possible_planets << planet
+    highest_value = 0
+    possible_planets = possible_planets.select do |planet|
+      possible_value = possible_cargo_value(planet)
+      if possible_value > highest_value
+        # since possible_planets are now sorted in descending order based on possible cargo value,
+        # highest_value should only be reassigned once for the highest value
+        highest_value = possible_value
       end
+      possible_value >= highest_value
     end
 
     possible_planets.at(rand(possible_planets.length))
@@ -60,6 +58,17 @@ class Travel
     all_planets.delete_at(all_planets.index(current_planet))
 
     all_planets
+  end
+
+  def possible_cargo_value(planet_name)
+    possible_value = 0
+    @game.game_state['currentHold'].each do |cargo_name, cargo_amt|
+      # don't count value of cargo if it's banned on the potential planet
+      unless Data.is_cargo_banned(cargo_name, planet_name)
+        possible_value += cargo_amt * Cargos.price_differential(cargo_name, Cargos.get_price_point(cargo_name)[:buy])
+      end
+    end
+    possible_value
   end
 
 end
