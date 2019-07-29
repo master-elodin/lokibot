@@ -174,12 +174,15 @@ def take_turn(game = Game.new(DATABASE))
       take_turn(game)
     end
 
-    # TODO: might get to 0 credits without the loanshark taking his money back, but unlikely to be exactly 0
-    DATABASE.get_db[:loanshark].insert(:game_id => game.id,
-                                       :forced_repayment => true,
-                                       :forced_repayment_recovered => forced_repayment_recovered,
-                                       :loan_amt_repaid => loan_amt_start_turn,
-                                       :turn_repaid => game.current_turn)
+    # don't add another loanshark entry if there's already one for the game
+    unless DATABASE.get_db[:loanshark].where(:game_id => game.id).count > 0
+      # TODO: might get to 0 credits without the loanshark taking his money back, but unlikely to be exactly 0
+      DATABASE.get_db[:loanshark].insert(:game_id => game.id,
+                                         :forced_repayment => true,
+                                         :forced_repayment_recovered => forced_repayment_recovered,
+                                         :loan_amt_repaid => loan_amt_start_turn,
+                                         :turn_repaid => game.current_turn)
+    end
   else
     if game.turns_left > 1
       take_turn(game)
