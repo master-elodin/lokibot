@@ -154,7 +154,7 @@ def take_turn(game = Game.new(DATABASE))
 
   game.travel
 
-  puts "At the end of turn ##{game.turns_left}, you have #{game.current_credits} credits"
+  puts "At the end of turn ##{game.current_turn}, you have #{game.current_credits} credits"
   puts
 
   game_over = false

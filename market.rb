@@ -54,11 +54,22 @@ class Market
     puts 'Selling cargo...'
     # TODO: sell cargo if lower price differential if possible to buy higher differential if there was space
 
-    market_low_price_cargo = @game.current_market_low
-    if market_low_price_cargo.length > 0
-      low_price_cargo_differential = Cargos.price_differential(market_low_price_cargo, current_market[market_low_price_cargo])
-    else
-      low_price_cargo_differential = -1
+    price_differentials = []
+    potential_credits = @game.current_credits
+    current_hold.each do |cargo_name, value|
+      if value > 0 and !Data.is_cargo_banned(cargo_name, @game.current_planet)
+        potential_credits += current_market[cargo_name]
+      end
+    end
+
+    current_market.each do |cargo_name, cargo_price|
+      # add differential for any cargo that can be bought on current planet AND you can afford
+      if !cargo_price.nil? and potential_credits >= cargo_price
+        price_differentials << {name: cargo_name, profit: Cargos.price_differential(cargo_name, cargo_price)}
+      end
+    end
+    price_differentials.sort! do |a, b|
+      b[:price] <=> a[:price]
     end
 
     transaction_data = {side: 'sell'}
@@ -66,18 +77,21 @@ class Market
       cargo_price = current_market[cargo_name]
       if value > 0 and Data.is_cargo_banned(cargo_name, @game.current_planet)
         puts "Cannot sell `#{cargo_name}` on #{@game.current_planet}"
-      elsif market_low_price_cargo == cargo_name
-        puts "Not selling #{value} #{cargo_name} because it's at a super low price (#{cargo_price}) right now"
       elsif value > 0
+        if @game.current_market_low == cargo_name
+          puts "Not selling #{value} #{cargo_name} because it's at a super low price (#{cargo_price}) right now"
+          next
+        end
+
         is_last_turn = @game.turns_left == 1
 
-        # if another cargo is currently having a low-price market event, sell whatever possible to buy it AS LONG AS the price differential is better
-        sell_to_buy_low_price_cargo = market_low_price_cargo.length > 0 && low_price_cargo_differential > Cargos.price_differential(cargo_name, cargo_price)
+        potential_profit = Cargos.price_differential(cargo_name, cargo_price)
+        other_cargo_higher_profit = price_differentials.length > 0 && potential_profit < price_differentials[0][:profit]
 
-        if Cargos.can_sell(cargo_name, cargo_price) || is_last_turn || sell_to_buy_low_price_cargo
+        if Cargos.can_sell(cargo_name, cargo_price) || is_last_turn || other_cargo_higher_profit
           transaction_data[cargo_name] = value
-          if sell_to_buy_low_price_cargo
-            puts "Selling #{value} #{cargo_name} at #{cargo_price} to buy #{market_low_price_cargo} at #{current_market[market_low_price_cargo]}"
+          if other_cargo_higher_profit
+            puts "Selling #{value} #{cargo_name} at #{cargo_price} to buy #{price_differentials[0][:name]} at #{current_market[price_differentials[0][:name]]}"
           else
             puts "Selling #{value} #{cargo_name} at #{cargo_price} for a total income of #{cargo_price * value} credits"
           end
