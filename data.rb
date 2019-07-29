@@ -40,6 +40,7 @@ class DatabaseConnector
         # TODO: remove incorrect columns `loan_amt_repayed` and `turn_repayed` - stupid typos
         Integer :loan_amt_repaid
         Integer :turn_repaid
+        Integer :sellable_cargo_value_at_repayment
       end
       puts 'Created new loanshark table'
     end

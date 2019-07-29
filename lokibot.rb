@@ -181,6 +181,7 @@ def take_turn(game = Game.new(DATABASE))
                                          :forced_repayment => true,
                                          :forced_repayment_recovered => forced_repayment_recovered,
                                          :loan_amt_repaid => loan_amt_start_turn,
+                                         :sellable_cargo_value => sellable_cargo_value,
                                          :turn_repaid => game.current_turn)
     end
   else
