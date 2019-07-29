@@ -1,4 +1,3 @@
-# TODO: move into market.rb
 class Cargos
 
   def self.cargo_names

@@ -112,7 +112,7 @@ class Game
   end
 
   def current_turn
-    20 - turns_left
+    (20 - turns_left) + 1
   end
 
   def turns_left

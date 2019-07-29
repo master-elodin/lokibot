@@ -31,13 +31,17 @@ class DatabaseConnector
 
   def initialize
 
+    # TODO: remove columns
+    # loanshark - loan_amt_repayed, turn_repayed
+    # notifications - cargo_type
+    # transaction - avg_amt_purchased, avg_amt_sold, total_amt_purchased, total_amt_sold;
+
     unless DB.table_exists?(:loanshark)
       DB.create_table :loanshark do
         primary_key :id
         String :game_id
         Boolean :forced_repayment
         Boolean :forced_repayment_recovered
-        # TODO: remove incorrect columns `loan_amt_repayed` and `turn_repayed` - stupid typos
         Integer :loan_amt_repaid
         Integer :turn_repaid
         Integer :sellable_cargo_value_at_repayment
@@ -119,7 +123,6 @@ class DatabaseConnector
       Integer :turn_number
       String :notification_type
       String :notification_text
-      # TODO: remove unnecessary column 'cargo_type'
       String :cargo_name
       Integer :cargo_price
       String :cargo_price_type

@@ -52,7 +52,6 @@ class Market
 
   def sell_cargo
     puts 'Selling cargo...'
-    # TODO: sell cargo if lower price differential if possible to buy higher differential if there was space
 
     price_differentials = []
     potential_credits = @game.current_credits
@@ -161,19 +160,6 @@ class Market
       cargo_amt = [(@game.current_credits / cargo_price).floor, @game.open_bays].min
     end
 
-    if cargo_amt > @game.open_bays
-      # TODO - this case should never happen; remove
-      puts "Tried to buy #{cargo_amt} but only have space for #{@game.open_bays}"
-      return
-    end
-
-    total_purchase_price = cargo_amt * cargo_price
-    if total_purchase_price > @game.current_credits
-      # TODO - this case should never happen; remove
-      puts "Tried to spend #{cargo_price} but only have #{@game.current_credits}"
-      return
-    end
-
     unless Cargos.can_buy(cargo_name, cargo_price)
       puts "Not buying #{cargo_name} at #{cargo_price} because it is above buy price point of #{Cargos.get_price_point(cargo_name)[:buy]}"
       return
@@ -188,7 +174,7 @@ class Market
 
     transaction_data = {side: 'buy'}
     transaction_data[cargo_name] = cargo_amt
-    puts "Buying #{cargo_amt} #{cargo_name} at #{cargo_price} each, for a total cost of #{total_purchase_price}"
+    puts "Buying #{cargo_amt} #{cargo_name} at #{cargo_price} each, for a total cost of #{cargo_amt * cargo_price}"
 
     @game.take_action('trade', {transaction: transaction_data})
   end

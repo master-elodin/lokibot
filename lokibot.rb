@@ -52,12 +52,6 @@ def update_market_meta
 
   end
 
-  # TODO: fix transaction table
-  # alter table main."transaction" DROP COLUMN avg_amt_purchased;
-  # alter table main."transaction" DROP COLUMN avg_amt_sold;
-  # alter table main."transaction" DROP COLUMN total_amt_purchased;
-  # alter table main."transaction" DROP COLUMN total_amt_sold;
-
   # update transaction meta (data averaging for every game)
   new_meta.each do |cargo_name, value|
     DATABASE.get_db[:transaction_meta].where(:name => cargo_name).delete
@@ -75,8 +69,6 @@ def update_market_meta
                 :num_times_sold => value[:total_num_times_sold],
                 :avg_price_sold => value[:total_price_sold] / value[:total_num_times_sold],
                 :avg_amt_sold => value[:total_amt_sold] / value[:total_num_times_sold])
-    # TODO: add diff between number purchased and sold
-    # TODO: add diff between average purchase price and average sale price
   end
 
   ending = Process.clock_gettime(Process::CLOCK_MONOTONIC)
