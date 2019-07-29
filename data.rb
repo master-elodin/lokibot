@@ -112,6 +112,19 @@ class DatabaseConnector
       Integer :turn_number
     end
 
+    DB.create_table? :notifications do
+      primary_key :id
+      String :game_id
+      String :planet
+      Integer :turn_number
+      String :notification_type
+      String :notification_text
+      # TODO: remove unnecessary column 'cargo_type'
+      String :cargo_name
+      Integer :cargo_price
+      String :cargo_price_type
+    end
+
     @loanshark = DB[:loanshark]
     @score = DB[:score]
     @transaction = DB[:transaction]

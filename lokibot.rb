@@ -154,34 +154,29 @@ def take_turn(game = Game.new(DATABASE))
 
   game.travel
 
-  # TODO: handle notifications
-  unless game.game_data['notifications'].nil? or game.game_data['notifications'].length == 0
-    puts "notifications: #{game.game_data['notifications']}"
-  end
-
   puts "At the end of turn ##{game.turns_left}, you have #{game.current_credits} credits"
   puts
 
   game_over = false
-  if game.current_credits == 0
+  if game.loan_shark_attacked
+    puts 'Attacked by loan shark'
     sellable_cargo_value = game.market.get_sellable_cargo_value
-    forced_repayment_recovered = sellable_cargo_value >= MIN_CREDITS_AFTER_REPAYMENT
-    if not forced_repayment_recovered
+    forced_repayment_recoverable = sellable_cargo_value >= MIN_CREDITS_AFTER_REPAYMENT
+    if not forced_repayment_recoverable
       game_over = true
       puts 'Putting you out of your misery - you have no credits left and not enough cargo to be worth selling'
-    elsif @game.turns_left > 1
+    elsif game.turns_left > 1
       puts "You have 0 credits, but you have #{sellable_cargo_value} credits worth of cargo that can be sold"
       take_turn(game)
     end
 
     # don't add another loanshark entry if there's already one for the game
     unless DATABASE.get_db[:loanshark].where(:game_id => game.id).count > 0
-      # TODO: might get to 0 credits without the loanshark taking his money back, but unlikely to be exactly 0
       DATABASE.get_db[:loanshark].insert(:game_id => game.id,
                                          :forced_repayment => true,
-                                         :forced_repayment_recovered => forced_repayment_recovered,
+                                         :forced_repayment_recovered => forced_repayment_recoverable,
                                          :loan_amt_repaid => loan_amt_start_turn,
-                                         :sellable_cargo_value => sellable_cargo_value,
+                                         :sellable_cargo_value_at_repayment => sellable_cargo_value,
                                          :turn_repaid => game.current_turn)
     end
   else

@@ -1,6 +1,10 @@
 # TODO: move into market.rb
 class Cargos
 
+  def self.cargo_names
+    %w[mining medical narcotics weapons water metal]
+  end
+
   def self.price_points
     {
         'mining' => {:sell => 1800, :buy => 1400},

@@ -12,7 +12,7 @@ class Market
   end
 
   def all_cargo
-    %w[mining, medical, narcotics, weapons, water, metal]
+    %w[mining medical, narcotics, weapons, water, metal]
   end
   
   def current_market
@@ -107,6 +107,7 @@ class Market
     end
 
     # sort by price differential to get the best potential value
+    # TODO: this isn't a correct cargo sort - [{:cargo_name=>"water", :cargo_price=>14921}, {:cargo_name=>"weapons", :cargo_price=>22427}]
     possible_cargos.sort {|a, b| Cargos.price_differential(b[:cargo_name], b[:cargo_price]) <=> Cargos.price_differential(a[:cargo_name], a[:cargo_price])}
     puts "Possible cargo: #{possible_cargos}"
 
