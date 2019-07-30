@@ -1,18 +1,60 @@
 class Cargos
 
+  @sell_percentage = 1.4
+  @buy_percentage = 0.6
+  @prices = {}
+
+  def self.sell_percentage
+    @sell_percentage
+  end
+
+  def self.buy_percentage
+    @buy_percentage
+  end
+
   def self.cargo_names
     %w[mining medical narcotics weapons water metal]
   end
 
   def self.price_points
-    {
-        'mining' => {:sell => 2000, :buy => 1800},
-        'medical' => {:sell => 3000, :buy => 2000},
-        'narcotics' => {:sell => 35000, :buy => 25000},
-        'weapons' => {:sell => 71000, :buy => 60000},
-        'water' => {:sell => 17000, :buy => 15000},
-        'metal' => {:sell => 700, :buy => 500}
-    }
+    if @prices.length == 0
+      puts 'Initializing cargo prices...'
+
+      puts "pre-set sell percentage = #{@sell_percentage}"
+      puts "pre-set buy percentage = #{@buy_percentage}"
+
+      # find the average buy and sell adjustments for all the better-than-average games
+      successful_cargo_decisions = [{:sell_percentage => @sell_percentage, :buy_percentage => @buy_percentage}]
+      DATABASE.get_db[:cargo_decisions].where(:above_avg_score => true).order(:final_score).each do |row|
+        successful_cargo_decisions << row
+      end
+      puts "successful decisions = #{successful_cargo_decisions}"
+      # only take the top 10 scores
+      successful_cargo_decisions = successful_cargo_decisions[0..[10, successful_cargo_decisions.length].min]
+      puts "top 10 successful decisions = #{successful_cargo_decisions}"
+
+      if successful_cargo_decisions.length > 0
+        sell = 0
+        buy = 0
+        successful_cargo_decisions.each do |decision|
+          sell += decision[:sell_percentage]
+          buy += decision[:buy_percentage]
+        end
+        @sell_percentage = (sell / (successful_cargo_decisions.length * 1.0)).round(2)
+        @buy_percentage = (buy / (successful_cargo_decisions.length * 1.0)).round(2)
+      end
+
+      puts "sell percentage = #{@sell_percentage}"
+      puts "buy percentage = #{@buy_percentage}"
+
+      DATABASE.get_db[:transaction_meta].all.each do |meta|
+        avg_price = meta[:avg_price]
+        # adjust prices based on average price for the given cargo all the times it's been seen
+        @prices[meta[:name]] = {:sell => (avg_price * @sell_percentage).round(0), :buy => (avg_price * @buy_percentage).round(0)}
+        puts "#{meta[:name]} = #{@prices[meta[:name]]}"
+      end
+    end
+    @prices
   end
 
   def self.get_price_point(cargo_name)

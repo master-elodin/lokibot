@@ -118,6 +118,13 @@ def add_final_score(game)
                                  :final_planet => game.current_planet,
                                  :total_bays => game.total_bays,
                                  :max_cargo_count => game.market.max_cargo_count)
+
+  avg_final_score = DATABASE.get_average_final_score.round(0)
+  DATABASE.get_db[:cargo_decisions].insert(:game_id => game.id,
+                                           :final_score => game.current_credits,
+                                           :above_avg_score => game.current_credits > avg_final_score,
+                                           :sell_percentage => Cargos.sell_percentage,
+                                           :buy_percentage => Cargos.buy_percentage)
 end
 
 def submit_score(game)
@@ -184,19 +191,19 @@ def take_turn(game = Game.new(DATABASE))
     if game.turns_left > 1
       take_turn(game)
     else
-      # sell everything on board
-      game.market.sell_cargo
-
       game_over = true
-      submit_score(game)
     end
   end
 
   if game_over
+    # sell everything on board
+    game.market.sell_cargo
+
     # summarize market data for the whole game
     summarize_market(game.id)
 
     add_final_score(game)
+    submit_score(game)
 
     puts "You made these transactions:"
     transactions_for_game = DATABASE.get_transaction_list(game.id)
@@ -262,6 +269,7 @@ def take_turn(game = Game.new(DATABASE))
     avg_total_score = DATABASE.get_average_final_score.round(0)
     diff_from_avg = (game.current_credits - avg_total_score)
     puts "Average total score: #{Util.add_commas(avg_total_score)} [this game: #{'+' if diff_from_avg > 0}#{Util.add_commas(diff_from_avg)}]"
+    puts "Cargo average diffs = [sell=#{Cargos.sell_percentage}, buy=#{Cargos.buy_percentage}]"
     puts "Percent games with loanshark forced repayment: #{DATABASE.get_percent_forced_repayment}%"
     puts "Percent games with loanshark forced repayment recovered: #{DATABASE.get_percent_forced_repayment_recovered}%"
   end

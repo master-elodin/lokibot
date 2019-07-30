@@ -130,6 +130,15 @@ class DatabaseConnector
       String :cargo_price_type
     end
 
+    DB.create_table? :cargo_decisions do
+      primary_key :id
+      String :game_id
+      Integer :final_score
+      Boolean :above_avg_score
+      Float :sell_percentage
+      Float :buy_percentage
+    end
+
     @loanshark = DB[:loanshark]
     @score = DB[:score]
     @transaction = DB[:transaction]

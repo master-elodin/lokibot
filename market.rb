@@ -93,7 +93,8 @@ class Market
 
         if Cargos.can_sell(cargo_name, cargo_price) || is_last_turn || other_cargo_higher_profit
           transaction_data[cargo_name] = value
-          if other_cargo_higher_profit
+
+          if other_cargo_higher_profit and !is_last_turn
             puts "Selling #{value} #{cargo_name} at #{cargo_price} to buy #{price_differentials[0][:name]} at #{current_market[price_differentials[0][:name]]}"
           else
             puts "Selling #{value} #{cargo_name} at #{cargo_price} for a total income of #{cargo_price * value} credits"
