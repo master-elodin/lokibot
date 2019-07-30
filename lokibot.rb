@@ -33,6 +33,7 @@ def update_market_meta
     new_meta[cargo_name][:num_averages] += 1
   end
 
+  # TODO: don't query all transactions every time (low priority since it only takes 24ms anyway)
   # get average transaction data (checks ALL transactions right now)
   DATABASE.get_db[:transaction].all.each do |row|
     cargo_name = row[:name]
@@ -112,7 +113,8 @@ def add_final_score(game)
                                  :final_score => game.current_credits,
                                  :unsold_cargo => cargo_count > 0,
                                  :unsold_cargo_name => cargo_names.to_json,
-                                 :final_planet => game.current_planet)
+                                 :final_planet => game.current_planet,
+                                 :total_bays => game.total_bays)
 end
 
 def submit_score(game)
@@ -137,11 +139,15 @@ def take_turn(game = Game.new(DATABASE))
 
   loan_amt_start_turn = game.loan_balance
 
-  game.repay_loanshark
   game.market.sell_cargo
+
+  game.repay_loanshark
+  game.shipyard.buy_bays
+
+  # TODO: borrow from loanshark if low price event with high profit chance
+  # TODO: don't buy medical if maybe traveling to taspra
   game.market.buy_cargo
 
-  # TODO: shipyard
   # TODO: bank
 
   game.travel

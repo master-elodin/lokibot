@@ -1,6 +1,9 @@
+require_relative 'shipyard'
+
 class Travel
 
   LOAN_SHARK_PLANET = 'umbriel'
+  SHIPYARD_PLANET = 'taspra'
   MIN_CREDITS_AFTER_REPAYMENT = 10000
 
   def initialize(game, database)
@@ -31,15 +34,17 @@ class Travel
       return LOAN_SHARK_PLANET
     end
 
-    # TODO: buy more bays
+    if @game.shipyard.should_visit
+      return SHIPYARD_PLANET
+    end
 
     possible_planets = get_possible_travel_planets(@game.current_planet).sort do |a, b|
-      possible_cargo_value(b) <=> possible_cargo_value(a)
+      Cargos.possible_cargo_value(@game, b) <=> Cargos.possible_cargo_value(@game, a)
     end
 
     highest_value = 0
     possible_planets = possible_planets.select do |planet|
-      possible_value = possible_cargo_value(planet)
+      possible_value = Cargos.possible_cargo_value(@game, planet)
       if possible_value > highest_value
         # since possible_planets are now sorted in descending order based on possible cargo value,
         # highest_value should only be reassigned once for the highest value
@@ -59,16 +64,4 @@ class Travel
 
     all_planets
   end
-
-  def possible_cargo_value(planet_name)
-    possible_value = 0
-    @game.game_state['currentHold'].each do |cargo_name, cargo_amt|
-      # don't count value of cargo if it's banned on the potential planet
-      unless Data.is_cargo_banned(cargo_name, planet_name)
-        possible_value += cargo_amt * Cargos.price_differential(cargo_name, Cargos.get_price_point(cargo_name)[:buy])
-      end
-    end
-    possible_value
-  end
-
 end

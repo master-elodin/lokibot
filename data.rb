@@ -57,6 +57,7 @@ class DatabaseConnector
         Boolean :unsold_cargo
         String :unsold_cargo_name
         String :final_planet
+        Integer :total_bays
       end
       puts 'Created new score table'
     end

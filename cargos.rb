@@ -30,4 +30,16 @@ class Cargos
   def self.price_differential(cargo_name, buy_price)
     self.price_points[cargo_name][:sell] - buy_price
   end
+
+  def self.possible_cargo_value(game, planet_name)
+    possible_value = 0
+    game.game_state['currentHold'].each do |cargo_name, cargo_amt|
+      # don't count value of cargo if it's banned on the potential planet
+      unless Data.is_cargo_banned(cargo_name, planet_name)
+        possible_value += cargo_amt * Cargos.price_differential(cargo_name, Cargos.get_price_point(cargo_name)[:buy])
+      end
+    end
+    possible_value
+  end
+
 end

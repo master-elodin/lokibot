@@ -7,7 +7,7 @@ MIN_CREDITS_AFTER_REPAYMENT = 10000
 
 class Game
 
-  attr_reader :id, :game_data, :market, :db, :current_market_low, :current_market_high
+  attr_reader :id, :game_data, :market, :shipyard, :db, :current_market_low, :current_market_high
 
   def initialize(database)
     puts 'Starting new game...'
@@ -18,6 +18,7 @@ class Game
 
     @market = Market.new(self, database)
     @travel = Travel.new(self, database)
+    @shipyard = Shipyard.new(self, database)
 
     @db = database
 
