@@ -1,6 +1,8 @@
 require_relative 'cargos'
 
 class Market
+
+  attr_reader :max_cargo_count
   
   def initialize(game, database)
     @game = game
@@ -9,6 +11,8 @@ class Market
     @transaction_table = database.get_db[:transaction]
 
     @current_cargo = {}
+
+    @max_cargo_count = 0
   end
 
   def all_cargo
@@ -152,6 +156,12 @@ class Market
         break
       end
     end
+
+    hold_size = 0
+    current_hold.each do |name, amt|
+      hold_size += amt
+    end
+    @max_cargo_count = [hold_size, @max_cargo_count].max
   end
 
   def buy_single_cargo(cargo_name, cargo_amt)

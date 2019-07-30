@@ -58,6 +58,7 @@ class DatabaseConnector
         String :unsold_cargo_name
         String :final_planet
         Integer :total_bays
+        Integer :max_cargo_count
       end
       puts 'Created new score table'
     end

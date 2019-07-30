@@ -114,7 +114,8 @@ def add_final_score(game)
                                  :unsold_cargo => cargo_count > 0,
                                  :unsold_cargo_name => cargo_names.to_json,
                                  :final_planet => game.current_planet,
-                                 :total_bays => game.total_bays)
+                                 :total_bays => game.total_bays,
+                                 :max_cargo_count => game.market.max_cargo_count)
 end
 
 def submit_score(game)
@@ -241,7 +242,7 @@ def take_turn(game = Game.new(DATABASE))
     puts
     puts 'Game stats:'
     puts "Ending credits: #{game.current_credits} [#{game.current_credits - 20000} profit]"
-    puts "Num cargo bays: #{game.total_bays}"
+    puts "Num cargo bays: #{game.total_bays} [most filled=#{game.market.max_cargo_count}]"
     puts "Total economic instabilities: #{low_instabilities + high_instabilities} [#{low_instabilities} low, #{high_instabilities} high]"
     puts "Pirate attacks: #{pirate_attacks} [#{pirate_attack_losses} lost]"
     print "Authorities raiding: #{authorities_raid} "

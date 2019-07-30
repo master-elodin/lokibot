@@ -41,6 +41,12 @@ class Game
     body[:gameId] = @id
     @game_data = HTTParty.post("https://skysmuggler.com/game/#{relative_url}", body: body.to_json)
 
+    if game_state.nil?
+      puts @game_data
+      puts "Something went wrong with the request [#{relative_url}, #{body.to_json}]"
+      exit 1
+    end
+
     # if turns are different, travel happened and notifications may be different
     if turns_left_at_start != turns_left
       @current_market_low = ''

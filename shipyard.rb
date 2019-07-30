@@ -2,9 +2,12 @@ require_relative 'cargos'
 
 class Shipyard
 
+  HOLD_UTILIZATION_RATIO = 50
   LOT_SIZE = 25
-  MIN_CREDITS_AFTER_SHIPYARD = 25000
   MAX_BAYS = 1000
+  MAX_PURCHASE_ONE_TIME = 100
+  MIN_CREDITS_AFTER_SHIPYARD = 25000
+  MIN_TURNS_LEFT = 3
   PURCHASE_COST_RATIO = 0.3
   SHIPYARD_COST = 20000
   SHIPYARD_PLANET = 'taspra'
@@ -32,12 +35,28 @@ class Shipyard
   end
 
   def get_num_bays_to_buy
+    # make sure enough turns are left to be worth it
+    # but still buy if there's a low price market event
+    if @game.turns_left < MIN_TURNS_LEFT and @game.current_market_low.length == 0
+      puts "only #{@game.turns_left} turns left - not buying more cargo bays"
+      return 0
+    end
+
+    # make sure that current bays are already being utilized
+    hold_utilization = ((@game.market.max_cargo_count / @game.total_bays * 1.0) * 100).round(0)
+    if hold_utilization < HOLD_UTILIZATION_RATIO
+      puts "Not buying more bays because hold utilization is only #{hold_utilization}%"
+      return 0
+    end
+
     num_lots = (@game.current_credits - MIN_CREDITS_AFTER_SHIPYARD) / SHIPYARD_COST
+
     # don't spend more than X% your credits on shipyard unless it's the first time buying them
     until num_lots <= 0 or get_cost_percentage(num_lots) <= PURCHASE_COST_RATIO or (num_lots == 1 and @game.total_bays == 25)
+      # TODO: if low price market event, buy enough bays that all of them will be able to be filled
       num_lots -= 1
     end
-    num_lots * LOT_SIZE
+    [num_lots * LOT_SIZE, MAX_PURCHASE_ONE_TIME].min
   end
 
   def get_cost_percentage(num_lots)
