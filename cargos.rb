@@ -31,6 +31,10 @@ class Cargos
     self.price_points[cargo_name][:sell] - buy_price
   end
 
+  def self.get_probable_profit(cargo_name)
+    self.price_points[cargo_name][:sell] - self.price_points[cargo_name][:buy]
+  end
+
   def self.possible_cargo_value(game, planet_name)
     possible_value = 0
     game.game_state['currentHold'].each do |cargo_name, cargo_amt|

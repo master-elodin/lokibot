@@ -200,11 +200,65 @@ def take_turn(game = Game.new(DATABASE))
     transactions_for_game.each do |transaction|
       puts transaction.to_json
     end
-    puts "You made #{game.current_credits - 20000} credits this game"
+
+    low_instabilities = 0
+    high_instabilities = 0
+    pirate_attacks = 0
+    pirate_attack_losses = 0
+    authorities_raid = 0
+    authorities_found = 0
+    narcotics_lost = 0
+    weapons_lost = 0
+
+    def int_out_of_string(str)
+      if str.nil?
+        0
+      else
+        str[/[\d+,?]+/].gsub(/,/, '').to_i
+      end
+    end
+
+    DATABASE.get_db[:notifications].where(:game_id => game.id).each do |notification|
+      text = notification[:notification_text]
+      if notification[:cargo_price_type] == 'high'
+        high_instabilities += 1
+      elsif notification[:cargo_price_type] == 'low'
+        low_instabilities += 1
+      elsif !text.index('pirate').nil?
+        pirate_attacks += 1
+        pirate_attack_losses += int_out_of_string(text)
+      elsif !text.index('authorities').nil?
+        authorities_raid += 1
+        unless text.index('caught by the').nil?
+          authorities_found += 1
+
+          narcotics_lost += int_out_of_string(text[/\d+ narcotic/])
+          weapons_lost += int_out_of_string(text[/\d+ weapon/])
+        end
+      end
+    end
+
+    puts
+    puts 'Game stats:'
+    puts "Ending credits: #{game.current_credits} [#{game.current_credits - 20000} profit]"
+    puts "Num cargo bays: #{game.total_bays}"
+    puts "Total economic instabilities: #{low_instabilities + high_instabilities} [#{low_instabilities} low, #{high_instabilities} high]"
+    puts "Pirate attacks: #{pirate_attacks} [#{pirate_attack_losses} lost]"
+    print "Authorities raiding: #{authorities_raid} "
+    if authorities_raid > 0
+      print "[#{authorities_raid - authorities_found} nothing found, "
+      print "#{narcotics_lost} narcotics lost, "
+      print "#{weapons_lost} weapons lost]"
+      puts " for a lost potential profit of #{narcotics_lost * Cargos.get_probable_profit('narcotics') + weapons_lost * Cargos.get_probable_profit('weapons')} credits"
+    else
+      puts
+    end
 
     puts
     puts "All-time stats"
-    puts "Average total score: #{DATABASE.get_average_final_score}"
+    avg_total_score = DATABASE.get_average_final_score.round(0)
+    diff_from_avg = (game.current_credits - avg_total_score)
+    puts "Average total score: #{avg_total_score} [this game: #{'+' if diff_from_avg > 0}#{diff_from_avg}]"
     puts "Percent games with loanshark forced repayment: #{DATABASE.get_percent_forced_repayment}%"
     puts "Percent games with loanshark forced repayment recovered: #{DATABASE.get_percent_forced_repayment_recovered}%"
   end
