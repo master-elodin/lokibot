@@ -82,7 +82,7 @@ class Cargos
     game.game_state['currentHold'].each do |cargo_name, cargo_amt|
       # don't count value of cargo if it's banned on the potential planet
       unless Data.is_cargo_banned(cargo_name, planet_name)
-        possible_value += cargo_amt * Cargos.price_differential(cargo_name, Cargos.get_price_point(cargo_name)[:buy])
+        possible_value += cargo_amt * Cargos.get_price_point(cargo_name)[:sell]
       end
     end
     possible_value

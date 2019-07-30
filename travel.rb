@@ -54,6 +54,17 @@ class Travel
       possible_value >= highest_value
     end
 
+    # don't go to Umbriel after loan repaid because weapons are banned there
+    if @game.loan_balance == 0 and !possible_planets.index('umbriel').nil?
+      possible_planets.delete_at(possible_planets.index('umbriel'))
+    end
+
+    # don't travel to earth unless you want to bank
+    # TODO: when implementing banking, change here
+    unless possible_planets.index('earth').nil?
+      possible_planets.delete_at(possible_planets.index('earth'))
+    end
+
     possible_planets.at(rand(possible_planets.length))
   end
 
