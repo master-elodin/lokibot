@@ -2,7 +2,7 @@ require_relative 'cargos'
 
 class Shipyard
 
-  HOLD_UTILIZATION_RATIO = 50
+  HOLD_UTILIZATION_RATIO = 75
   LOT_SIZE = 25
   MAX_BAYS = 1000
   MAX_PURCHASE_ONE_TIME = 100
@@ -42,21 +42,39 @@ class Shipyard
       return 0
     end
 
-    # make sure that current bays are already being utilized
-    hold_utilization = ((@game.market.max_cargo_count / @game.total_bays * 1.0) * 100).round(0)
-    if hold_utilization < HOLD_UTILIZATION_RATIO
-      puts "Not buying more bays because hold utilization is only #{hold_utilization}%"
+    num_lots = (@game.current_credits - MIN_CREDITS_AFTER_SHIPYARD) / SHIPYARD_COST
+
+    # first time buying, don't worry about percentage or utilization
+    if num_lots == 1 and @game.total_bays == 25
+      return num_lots * LOT_SIZE
+    end
+
+    # make sure that current bays are already being utilized except for first time
+    current_hold_utilization = get_hold_utilization(@game.total_bays)
+    if current_hold_utilization < HOLD_UTILIZATION_RATIO and @game.total_bays == 25
+      puts "Not buying more bays because hold utilization is only #{current_hold_utilization}% of #{@game.total_bays} total bays"
       return 0
     end
 
-    num_lots = (@game.current_credits - MIN_CREDITS_AFTER_SHIPYARD) / SHIPYARD_COST
-
     # don't spend more than X% your credits on shipyard unless it's the first time buying them
-    until num_lots <= 0 or get_cost_percentage(num_lots) <= PURCHASE_COST_RATIO or (num_lots == 1 and @game.total_bays == 25)
+    until num_lots <= 0
+      if get_cost_percentage(num_lots) <= PURCHASE_COST_RATIO
+        break
+      end
+
+      proposed_utilization = get_hold_utilization(@game.total_bays + (num_lots * LOT_SIZE))
+      if proposed_utilization >= HOLD_UTILIZATION_RATIO
+        puts "Potential purchase utilization: #{proposed_utilization}% if buying #{num_lots * LOT_SIZE} more bays for a total of #{@game.total_bays + (num_lots * LOT_SIZE)}"
+        break
+      end
       # TODO: if low price market event, buy enough bays that all of them will be able to be filled
       num_lots -= 1
     end
     [num_lots * LOT_SIZE, MAX_PURCHASE_ONE_TIME].min
+  end
+
+  def get_hold_utilization(num_bays)
+    ((@game.market.max_cargo_count / (num_bays * 1.0)).round(2) * 100)
   end
 
   def get_cost_percentage(num_lots)

@@ -6,8 +6,8 @@ class Cargos
 
   def self.price_points
     {
-        'mining' => {:sell => 1800, :buy => 1400},
-        'medical' => {:sell => 2600, :buy => 2000},
+        'mining' => {:sell => 2000, :buy => 1800},
+        'medical' => {:sell => 3000, :buy => 2000},
         'narcotics' => {:sell => 35000, :buy => 25000},
         'weapons' => {:sell => 71000, :buy => 60000},
         'water' => {:sell => 17000, :buy => 15000},

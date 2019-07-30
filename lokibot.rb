@@ -1,6 +1,7 @@
 require 'httparty'
 require_relative 'data'
 require_relative 'game'
+require_relative 'util'
 
 SCORE_NAME = 'Loki'
 SHOULD_SUBMIT_SCORE = false
@@ -9,6 +10,7 @@ DATABASE = DatabaseConnector.new
 
 # summarize all the data from all the games
 def update_market_meta
+  puts
   puts 'Updating market meta...'
   starting = Process.clock_gettime(Process::CLOCK_MONOTONIC)
 
@@ -241,10 +243,10 @@ def take_turn(game = Game.new(DATABASE))
 
     puts
     puts 'Game stats:'
-    puts "Ending credits: #{game.current_credits} [#{game.current_credits - 20000} profit]"
+    puts "Ending credits: #{Util.add_commas(game.current_credits)}"
     puts "Num cargo bays: #{game.total_bays} [most filled=#{game.market.max_cargo_count}]"
     puts "Total economic instabilities: #{low_instabilities + high_instabilities} [#{low_instabilities} low, #{high_instabilities} high]"
-    puts "Pirate attacks: #{pirate_attacks} [#{pirate_attack_losses} lost]"
+    puts "Pirate attacks: #{pirate_attacks} [#{Util.add_commas(pirate_attack_losses)} lost]"
     print "Authorities raiding: #{authorities_raid} "
     if authorities_raid > 0
       print "[#{authorities_raid - authorities_found} nothing found, "
@@ -259,7 +261,7 @@ def take_turn(game = Game.new(DATABASE))
     puts "All-time stats"
     avg_total_score = DATABASE.get_average_final_score.round(0)
     diff_from_avg = (game.current_credits - avg_total_score)
-    puts "Average total score: #{avg_total_score} [this game: #{'+' if diff_from_avg > 0}#{diff_from_avg}]"
+    puts "Average total score: #{Util.add_commas(avg_total_score)} [this game: #{'+' if diff_from_avg > 0}#{Util.add_commas(diff_from_avg)}]"
     puts "Percent games with loanshark forced repayment: #{DATABASE.get_percent_forced_repayment}%"
     puts "Percent games with loanshark forced repayment recovered: #{DATABASE.get_percent_forced_repayment_recovered}%"
   end
