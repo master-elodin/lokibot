@@ -1,7 +1,7 @@
 class Cargos
 
-  @sell_percentage = 1.1
-  @buy_percentage = 0.95
+  @sell_percentage = 1.2
+  @buy_percentage = 0.7
   @prices = {}
 
   def self.sell_percentage
@@ -44,6 +44,8 @@ class Cargos
 
       puts "sell percentage = #{@sell_percentage}"
       puts "buy percentage = #{@buy_percentage}"
+      @sell_percentage = 1.01
+      @buy_percentage = 0.99
 
       DATABASE.get_db[:transaction_meta].all.each do |meta|
         avg_price = meta[:avg_price]
@@ -72,7 +74,7 @@ class Cargos
   end
 
   def self.get_probable_profit(cargo_name)
-    self.price_points[cargo_name][:sell] - self.price_points[cargo_name][:buy]
+    (self.price_points[cargo_name][:sell] + self.price_points[cargo_name][:buy]) / 2
   end
 
   def self.possible_cargo_value(game, planet_name)

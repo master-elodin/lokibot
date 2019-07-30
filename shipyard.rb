@@ -62,7 +62,7 @@ class Shipyard
     end
     potential_hold_utilization = get_hold_utilization(@game.total_bays, num_possible_cargos)
     if potential_hold_utilization < HOLD_UTILIZATION_RATIO
-      puts "Not buying more cargo because #{num_possible_cargos} possible cargos (including cargo already on abord) to buy will only fill #{potential_hold_utilization}% of the existing #{@game.total_bays} bays"
+      puts "Not buying more bays because #{num_possible_cargos} possible cargos (including cargo already on abord) to buy will only fill #{potential_hold_utilization}% of the existing #{@game.total_bays} bays"
       return 0
     end
 

@@ -1,4 +1,5 @@
 require_relative 'cargos'
+require_relative 'util'
 
 class Market
 
@@ -97,7 +98,7 @@ class Market
           if other_cargo_higher_profit and !is_last_turn
             puts "Selling #{value} #{cargo_name} at #{cargo_price} to buy #{price_differentials[0][:name]} at #{current_market[price_differentials[0][:name]]}"
           else
-            puts "Selling #{value} #{cargo_name} at #{cargo_price} for a total income of #{cargo_price * value} credits"
+            puts "Selling #{value} #{cargo_name} at #{cargo_price} for a total income of #{Util.add_commas(cargo_price * value)} credits"
           end
 
           record_transaction('sale', cargo_name, value, cargo_price)
