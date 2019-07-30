@@ -69,7 +69,7 @@ class Market
     current_market.each do |cargo_name, cargo_price|
       # add differential for any cargo that can be bought on current planet AND you can afford
       if !cargo_price.nil? and potential_credits >= cargo_price and Cargos.can_buy(cargo_name, cargo_price)
-        price_differentials << {name: cargo_name, profit: Cargos.price_differential(cargo_name, cargo_price)}
+        price_differentials << {name: cargo_name, profit: Cargos.get_probable_profit(cargo_name)}
       end
     end
     price_differentials.sort! do |a, b|
@@ -82,14 +82,14 @@ class Market
       if value > 0 and Data.is_cargo_banned(cargo_name, @game.current_planet)
         puts "Cannot sell `#{cargo_name}` on #{@game.current_planet}"
       elsif value > 0
-        if @game.current_market_low == cargo_name
+        if @game.current_market_low == cargo_name and @game.turns_left > 1
           puts "Not selling #{value} #{cargo_name} because it's at a super low price (#{cargo_price}) right now"
           next
         end
 
         is_last_turn = @game.turns_left == 1
 
-        potential_profit = Cargos.price_differential(cargo_name, cargo_price)
+        potential_profit = Cargos.get_probable_profit(cargo_name)
         other_cargo_higher_profit = price_differentials.length > 0 && potential_profit < price_differentials[0][:profit]
 
         if Cargos.can_sell(cargo_name, cargo_price) || is_last_turn || other_cargo_higher_profit
@@ -131,7 +131,7 @@ class Market
 
     # sort by price differential to get the best potential value
     possible_cargos.sort! do |a, b|
-      Cargos.price_differential(b[:cargo_name], b[:cargo_price]) <=> Cargos.price_differential(a[:cargo_name], a[:cargo_price])
+      Cargos.get_probable_profit(b[:cargo_name]) <=> Cargos.get_probable_profit(a[:cargo_name])
     end
     possible_cargos
   end

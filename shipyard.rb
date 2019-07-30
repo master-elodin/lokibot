@@ -47,6 +47,8 @@ class Shipyard
       return 0
     end
 
+    # TODO: don't buy bays if higher value
+
     # if more than X bays already, don't buy more unless they can be filled
     num_theoretical_bays_open = @game.open_bays
     num_theoretical_credits = @game.current_credits

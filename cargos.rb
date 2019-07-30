@@ -44,8 +44,8 @@ class Cargos
 
       puts "sell percentage = #{@sell_percentage}"
       puts "buy percentage = #{@buy_percentage}"
-      @sell_percentage = 1.01
-      @buy_percentage = 0.99
+      @sell_percentage = 1.05
+      @buy_percentage = 0.9
 
       DATABASE.get_db[:transaction_meta].all.each do |meta|
         avg_price = meta[:avg_price]
@@ -67,10 +67,6 @@ class Cargos
 
   def self.can_sell(cargo_name, current_market_price)
     current_market_price >= self.price_points[cargo_name][:sell]
-  end
-
-  def self.price_differential(cargo_name, buy_price)
-    self.price_points[cargo_name][:sell] - buy_price
   end
 
   def self.get_probable_profit(cargo_name)
