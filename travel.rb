@@ -34,6 +34,7 @@ class Travel
       return LOAN_SHARK_PLANET
     end
 
+    # TODO: don't always visit shipyard if there are high value cargos to sell
     if @game.shipyard.should_visit
       return SHIPYARD_PLANET
     end
