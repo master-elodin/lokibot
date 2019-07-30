@@ -4,7 +4,7 @@ require_relative 'game'
 require_relative 'util'
 
 SCORE_NAME = 'Loki'
-SHOULD_SUBMIT_SCORE = false
+SHOULD_SUBMIT_SCORE = true
 
 DATABASE = DatabaseConnector.new
 
@@ -128,7 +128,9 @@ def add_final_score(game)
 end
 
 def submit_score(game)
-  if SHOULD_SUBMIT_SCORE
+  if game.current_turn < 18
+    puts "Game is only on turn #{game.current_turn} - cannot submit score"
+  elsif SHOULD_SUBMIT_SCORE
     score_response = HTTParty.post('https://skysmuggler.com/scores/submit', body: {gameId: game.id, name: 'joe rebel'}.to_json)
 
     puts "Score response: #{score_response}"
@@ -187,6 +189,9 @@ def take_turn(game = Game.new(DATABASE))
                                          :sellable_cargo_value_at_repayment => sellable_cargo_value,
                                          :turn_repaid => game.current_turn)
     end
+  elsif game.current_credits == 0 and game.market.get_sellable_cargo_value < 2000
+    puts "You have 0 credits and sellable cargo only worth #{game.market.get_sellable_cargo_value} credits. Ending game now"
+    game_over = true
   else
     if game.turns_left > 1
       take_turn(game)
@@ -252,6 +257,7 @@ def take_turn(game = Game.new(DATABASE))
     puts 'Game stats:'
     puts "Ending credits: #{Util.add_commas(game.current_credits)}"
     puts "Num cargo bays: #{game.total_bays} [most filled=#{game.market.max_cargo_count}]"
+    puts "Cargo price percentages = [sell=#{Cargos.sell_percentage}, buy=#{Cargos.buy_percentage}]"
     puts "Total economic instabilities: #{low_instabilities + high_instabilities} [#{low_instabilities} low, #{high_instabilities} high]"
     puts "Pirate attacks: #{pirate_attacks} [#{Util.add_commas(pirate_attack_losses)} lost]"
     print "Authorities raiding: #{authorities_raid} "
@@ -269,7 +275,6 @@ def take_turn(game = Game.new(DATABASE))
     avg_total_score = DATABASE.get_average_final_score.round(0)
     diff_from_avg = (game.current_credits - avg_total_score)
     puts "Average total score: #{Util.add_commas(avg_total_score)} [this game: #{'+' if diff_from_avg > 0}#{Util.add_commas(diff_from_avg)}]"
-    puts "Cargo average diffs = [sell=#{Cargos.sell_percentage}, buy=#{Cargos.buy_percentage}]"
     puts "Percent games with loanshark forced repayment: #{DATABASE.get_percent_forced_repayment}%"
     puts "Percent games with loanshark forced repayment recovered: #{DATABASE.get_percent_forced_repayment_recovered}%"
   end

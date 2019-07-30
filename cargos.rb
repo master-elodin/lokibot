@@ -1,7 +1,7 @@
 class Cargos
 
-  @sell_percentage = 1.4
-  @buy_percentage = 0.6
+  @sell_percentage = 1.1
+  @buy_percentage = 0.95
   @prices = {}
 
   def self.sell_percentage
@@ -28,10 +28,8 @@ class Cargos
       DATABASE.get_db[:cargo_decisions].where(:above_avg_score => true).order(:final_score).each do |row|
         successful_cargo_decisions << row
       end
-      puts "successful decisions = #{successful_cargo_decisions}"
       # only take the top 10 scores
       successful_cargo_decisions = successful_cargo_decisions[0..[10, successful_cargo_decisions.length].min]
-      puts "top 10 successful decisions = #{successful_cargo_decisions}"
 
       if successful_cargo_decisions.length > 0
         sell = 0

@@ -115,20 +115,7 @@ class Market
     end
   end
 
-  def buy_cargo
-    puts 'Buying cargo...'
-
-    # don't over-buy
-    if @game.open_bays == 0
-      puts "No space to buy cargo"
-      return
-    end
-
-    if @game.turns_left == 1
-      puts "Not buying cargo on last turn"
-      return
-    end
-
+  def get_possible_cargos
     possible_cargos = []
     current_market.each do |cargo_name, cargo_price|
       unless cargo_price.nil?
@@ -145,7 +132,24 @@ class Market
     possible_cargos.sort! do |a, b|
       Cargos.price_differential(b[:cargo_name], b[:cargo_price]) <=> Cargos.price_differential(a[:cargo_name], a[:cargo_price])
     end
+    possible_cargos
+  end
 
+  def buy_cargo
+    puts 'Buying cargo...'
+
+    # don't over-buy
+    if @game.open_bays == 0
+      puts "No space to buy cargo"
+      return
+    end
+
+    if @game.turns_left == 1
+      puts "Not buying cargo on last turn"
+      return
+    end
+
+    possible_cargos = get_possible_cargos
     puts "Possible cargo: #{possible_cargos}"
 
     possible_cargos.each do |cargo|
@@ -188,6 +192,14 @@ class Market
     puts "Buying #{cargo_amt} #{cargo_name} at #{cargo_price} each, for a total cost of #{cargo_amt * cargo_price}"
 
     @game.take_action('trade', {transaction: transaction_data})
+  end
+
+  def get_sellable_cargo_count
+    count = 0
+    @current_cargo.each do |name, num_onboard|
+      count += num_onboard
+    end
+    count
   end
 
   def get_sellable_cargo_value
