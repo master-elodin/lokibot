@@ -63,7 +63,7 @@ class Market
 
     current_market.each do |cargo_name, cargo_price|
       # add differential for any cargo that can be bought on current planet AND you can afford
-      if !cargo_price.nil? and potential_credits >= cargo_price
+      if !cargo_price.nil? and potential_credits >= cargo_price and Cargos.can_buy(cargo_name, cargo_price)
         price_differentials << {name: cargo_name, profit: Cargos.price_differential(cargo_name, cargo_price)}
       end
     end
@@ -90,9 +90,6 @@ class Market
         if Cargos.can_sell(cargo_name, cargo_price) || is_last_turn || other_cargo_higher_profit
           transaction_data[cargo_name] = value
           if other_cargo_higher_profit
-            # TODO: huh? why sell something to buy the higher one, but the higher one doesn't even show up
-            # Selling 10 narcotics at 52222 to buy water at 15161
-            # Possible cargo: [{:cargo_name=>"weapons", :cargo_price=>57960}, {:cargo_name=>"metal", :cargo_price=>445}]
             puts "Selling #{value} #{cargo_name} at #{cargo_price} to buy #{price_differentials[0][:name]} at #{current_market[price_differentials[0][:name]]}"
           else
             puts "Selling #{value} #{cargo_name} at #{cargo_price} for a total income of #{cargo_price * value} credits"
