@@ -41,6 +41,11 @@ class Shipyard
   end
 
   def get_num_bays_to_buy
+    # don't try to buy more bays if you've already got the max
+    if @game.total_bays == MAX_BAYS
+      return 0
+    end
+
     # make sure enough turns are left to be worth it
     # but still buy if there's a low price market event
     if @game.turns_left < MIN_TURNS_LEFT and @game.current_market_low.length == 0
