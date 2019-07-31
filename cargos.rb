@@ -42,15 +42,20 @@ class Cargos
       # only take the top 10 scores
       successful_cargo_decisions = successful_cargo_decisions[0..[10, successful_cargo_decisions.length].min]
 
+      success_weight = successful_cargo_decisions.length
+      total_weight = 0
       if successful_cargo_decisions.length > 0
         sell = 0
         buy = 0
+        # use a weighted average of decisions to give most value to the highest score's outcome
         successful_cargo_decisions.each do |decision|
-          sell += decision[:sell_percentage]
-          buy += decision[:buy_percentage]
+          sell += decision[:sell_percentage] * success_weight
+          buy += decision[:buy_percentage] * success_weight
+          total_weight += success_weight
+          success_weight -= 1
         end
-        @sell_percentage = (sell / (successful_cargo_decisions.length * 1.0)).round(2)
-        @buy_percentage = (buy / (successful_cargo_decisions.length * 1.0)).round(2)
+        @sell_percentage = (sell / (total_weight * 1.0)).round(2)
+        @buy_percentage = (buy / (total_weight * 1.0)).round(2)
       end
 
       puts "pre-chaos sell percentage = #{@sell_percentage}"

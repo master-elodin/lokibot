@@ -49,6 +49,17 @@ class Shipyard
 
     # TODO: don't buy bays if higher value
 
+    # TODO: this shouldn't happen - "Num cargo bays: 100 [most filled=17]"
+    # Should buy 75 bays for a cost of 60000 leaving 184541 credits
+    # Buying cargo...
+    # Possible cargo: [{:cargo_name=>"weapons", :cargo_price=>53661}, {:cargo_name=>"mining", :cargo_price=>1938}, {:cargo_name=>"metal", :cargo_price=>413}]
+    # 184541 credits left
+    # Going to purchase weapons...
+    # Buying 3 weapons at 53661 each, for a total cost of 160983
+    # 23558 credits left
+    # Going to purchase mining...
+    # Buying 12 mining at 1938 each, for a total cost of 23256
+
     # if more than X bays already, don't buy more unless they can be filled
     num_theoretical_bays_open = @game.open_bays
     num_theoretical_credits = @game.current_credits
@@ -123,7 +134,7 @@ class Shipyard
     end
 
     cost = (num_bays / LOT_SIZE) * SHIPYARD_COST
-    puts "Should buy #{num_bays} bays for a cost of #{cost} leaving #{@game.current_credits - cost} credits"
+    puts "Should buy #{num_bays} bays for a cost of #{cost} leaving #{@game.current_credits - cost} credits (hold utilization at #{get_hold_utilization(@game.total_bays)}%)"
     @game.take_action('shipyard', {transaction: {side: 'buy', qty: num_bays}})
   end
 end

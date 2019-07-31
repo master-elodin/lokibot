@@ -3,7 +3,7 @@ require_relative 'market'
 require_relative 'travel'
 
 LOAN_SHARK_PLANET = 'umbriel'
-MIN_CREDITS_AFTER_REPAYMENT = 10000
+MIN_CREDITS_AFTER_REPAYMENT = 40000
 
 class Game
 
@@ -147,9 +147,9 @@ class Game
   
   def repay_loanshark
     loan_amt_start_turn = loan_balance
-    credits_after_repayment = current_credits - loan_amt_start_turn
+    credits_after_repayment = current_credits - loan_amt_start_turn + @market.get_sellable_cargo_value
 
-    if loan_amt_start_turn > 0 and current_planet == LOAN_SHARK_PLANET and credits_after_repayment > MIN_CREDITS_AFTER_REPAYMENT
+    if loan_amt_start_turn > 0 and current_planet == LOAN_SHARK_PLANET and credits_after_repayment > MIN_CREDITS_AFTER_REPAYMENT and current_credits >= loan_balance
       puts "Repaying loan of #{loan_amt_start_turn}, leaving balance of #{credits_after_repayment}"
       take_action('loanshark', {transaction: {qty: loan_amt_start_turn, side: "repay"}})
 

@@ -58,23 +58,29 @@ class Market
   def sell_cargo
     puts 'Selling cargo...'
 
-    price_differentials = []
-    potential_credits = @game.current_credits
+    potential_profits = []
+    credits_if_all_cargo_sold = @game.current_credits
     current_hold.each do |cargo_name, value|
       if value > 0 and !Data.is_cargo_banned(cargo_name, @game.current_planet)
-        potential_credits += current_market[cargo_name]
+        credits_if_all_cargo_sold += current_market[cargo_name] * value
       end
     end
 
     current_market.each do |cargo_name, cargo_price|
-      # add differential for any cargo that can be bought on current planet AND you can afford
-      if !cargo_price.nil? and potential_credits >= cargo_price and Cargos.can_buy(cargo_name, cargo_price)
-        price_differentials << {name: cargo_name, profit: Cargos.get_probable_profit(cargo_name)}
+      # add potential profit for any cargo that can be bought on current planet AND you can afford
+      if !cargo_price.nil? and credits_if_all_cargo_sold >= cargo_price and Cargos.can_buy(cargo_name, cargo_price)
+        potential_profits << {name: cargo_name, profit: Cargos.get_probable_profit(cargo_name)}
       end
     end
-    price_differentials.sort! do |a, b|
+    potential_profits.sort! do |a, b|
       b[:profit] <=> a[:profit]
     end
+    puts "Current market: #{current_market.to_json}"
+    puts "Potential profits: #{potential_profits.to_json}"
+
+    # TODO: should have sold metal and bought water (maybe fixed?)
+    # current market: {"medical":null,"metal":711,"mining":2506,"narcotics":59552,"water":14120,"weapons":78311}
+    # Not selling metal at 711 because it is below the `sell` price point of 816
 
     transaction_data = {side: 'sell'}
     current_hold.each do |cargo_name, value|
@@ -90,20 +96,20 @@ class Market
         is_last_turn = @game.turns_left == 1
 
         potential_profit = Cargos.get_probable_profit(cargo_name)
-        other_cargo_higher_profit = price_differentials.length > 0 && potential_profit < price_differentials[0][:profit]
+        other_cargo_higher_profit = potential_profits.length > 0 && potential_profit < potential_profits[0][:profit]
 
         if Cargos.can_sell(cargo_name, cargo_price) || is_last_turn || other_cargo_higher_profit
           transaction_data[cargo_name] = value
 
           if other_cargo_higher_profit and !is_last_turn
-            puts "Selling #{value} #{cargo_name} at #{cargo_price} to buy #{price_differentials[0][:name]} at #{current_market[price_differentials[0][:name]]}"
+            puts "Selling #{value} #{cargo_name} at #{cargo_price} to buy #{potential_profits[0][:name]} at #{current_market[potential_profits[0][:name]]}"
           else
             puts "Selling #{value} #{cargo_name} at #{cargo_price} for a total income of #{Util.add_commas(cargo_price * value)} credits"
           end
 
           record_transaction('sale', cargo_name, value, cargo_price)
         else
-          puts "Not selling #{cargo_name} at #{cargo_price} because it is below the `sell` price point of #{Cargos.get_price_point(cargo_name)[:sell]}"
+          puts "Not selling #{value} #{cargo_name} at #{cargo_price} because it is below the `sell` price point of #{Cargos.get_price_point(cargo_name)[:sell]}"
         end
       end
     end
@@ -152,6 +158,12 @@ class Market
 
     possible_cargos = get_possible_cargos
     puts "Possible cargo: #{possible_cargos}"
+
+    # don't keep playing the game if still no cargo to buy after turn 2
+    if possible_cargos.length == 0 and @game.current_credits == 20000 and @game.current_turn == 3
+      puts "Haven't made any money after turn 3 and no cargo to buy... exiting now"
+      exit 1
+    end
 
     possible_cargos.each do |cargo|
       puts "#{@game.current_credits} credits left"
@@ -210,7 +222,6 @@ class Market
         potential_credits_from_cargo += (current_market[name] * num_onboard)
       end
     end
-    puts "You have #{potential_credits_from_cargo} credits of sellable cargo"
     potential_credits_from_cargo
   end
 end
