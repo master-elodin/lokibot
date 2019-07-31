@@ -267,14 +267,44 @@ def take_turn(game = Game.new(DATABASE))
 
     num_purchases = 0
     num_sales = 0
+    cargo_volumes = []
     DATABASE.get_db[:transaction].where(:game_id => game.id).each do |transaction|
+      index = cargo_volumes.index {|c| c[:name] == transaction[:name]}
+      if index.nil?
+        volume = {:name => transaction[:name],
+                  :buy => 0,
+                  :total_buy_price => 0,
+                  :sell => 0,
+                  :total_sell_price => 0,
+                  :tx_total_price => 0}
+        cargo_volumes << volume
+      else
+        volume = cargo_volumes[index]
+      end
+
+      tx_amount = transaction[:amount]
+      tx_total_price = transaction[:price] * tx_amount
       if transaction[:type] == 'purchase'
         num_purchases += 1
+        volume[:buy] += tx_amount.to_i
+        volume[:total_buy_price] += tx_total_price
+        volume[:tx_total_price] -= tx_total_price
       else
         num_sales += 1
+        volume[:sell] += tx_amount.to_i
+        volume[:total_sell_price] += tx_total_price
+        volume[:tx_total_price] += tx_total_price
       end
     end
+    # sort by volume bought and sold
+    cargo_volumes.sort! do |a, b|
+      (b[:tx_total_price]) <=> (a[:tx_total_price])
+    end
     Util.log("You made #{num_purchases} purchases and #{num_sales} sales (may include multiple purchases for same cargo)")
+    puts 'Cargo volumes:'
+    cargo_volumes.each do |volume|
+      Util.log("#{volume[:name].ljust(10)} #{volume[:buy]} bought and #{volume[:sell]} sold for probable profit of #{volume[:tx_total_price]}")
+    end
 
     puts
     puts "All-time stats"
