@@ -259,8 +259,7 @@ def take_turn(game = Game.new(DATABASE))
       print "[#{authorities_raid - authorities_found} nothing found, "
       print "#{narcotics_lost} narcotics lost, "
       print "#{weapons_lost} weapons lost]"
-      potential_profit = narcotics_lost * Cargos.get_probable_profit('narcotics') + weapons_lost * Cargos.get_probable_profit('weapons')
-      puts " for a lost potential profit of #{Util.add_commas(potential_profit)} credits"
+      puts
     else
       puts
     end

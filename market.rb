@@ -59,7 +59,6 @@ class Market
     Util.log("Current market: #{current_market.to_json}")
     puts 'Selling cargo...'
 
-    potential_profits = []
     credits_if_all_cargo_sold = @game.current_credits
     current_hold.each do |cargo_name, value|
       if value > 0 and !Data.is_cargo_banned(cargo_name, @game.current_planet)
@@ -71,21 +70,6 @@ class Market
     if credits_if_all_cargo_sold > 0
       puts "Potential profits: #{Util.add_commas(potential_profits.to_json)}"
     end
-
-    # current_market.each do |cargo_name, cargo_price|
-    #   # add potential profit for any cargo that can be bought on current planet AND you can afford
-    #   if !cargo_price.nil? and credits_if_all_cargo_sold >= cargo_price and Cargos.can_buy(cargo_name, cargo_price)
-    #     num_can_afford = credits_if_all_cargo_sold / cargo_price
-    #     potential_profits << {name: cargo_name, profit: Cargos.get_probable_profit(cargo_name) * num_can_afford, :num_can_afford => num_can_afford}
-    #   end
-    # end
-    # potential_profits.sort! do |a, b|
-    #   b[:profit] <=> a[:profit]
-    # end
-    # puts "Current market: #{current_market.to_json}"
-    # if credits_if_all_cargo_sold > 0
-    #   puts "Potential profits: #{Util.add_commas(potential_profits.to_json)}"
-    # end
 
     transaction_data = {side: 'sell'}
     current_hold.each do |cargo_name, value|
@@ -104,7 +88,7 @@ class Market
         other_cargo_higher_profit = potential_profits.length > 0 && potential_profit < potential_profits[0][:profit]
 
         # don't sell a cargo just to buy it again
-        if other_cargo_higher_profit and potential_profits[0][:name] == cargo_name
+        if !is_last_turn and other_cargo_higher_profit and potential_profits[0][:name] == cargo_name
           next
         end
 
@@ -163,7 +147,7 @@ class Market
         purchase_cost_per = Cargos.get_price_point(cargo_name)[:buy]
       end
 
-      num_can_afford = max_credits / cargo_price
+      num_can_afford = [max_credits / cargo_price, @game.open_bays].min
       possible_cargos << {:name => cargo_name,
                           :price => cargo_price,
                           :num_can_afford => num_can_afford,
