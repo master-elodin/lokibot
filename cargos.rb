@@ -1,7 +1,21 @@
+CHAOS_AMT = 0.05
+
+def random_bool
+  [true, false].sample
+end
+
+def add_chaos(num)
+  chaos_amt = CHAOS_AMT
+  if random_bool
+    chaos_amt *= -1
+  end
+  (num + chaos_amt).round(2)
+end
+
 class Cargos
 
-  @sell_percentage = 1.2
-  @buy_percentage = 0.7
+  @sell_percentage = 0
+  @buy_percentage = 0
   @prices = {}
 
   def self.sell_percentage
@@ -20,11 +34,8 @@ class Cargos
     if @prices.length == 0
       puts 'Initializing cargo prices...'
 
-      puts "pre-set sell percentage = #{@sell_percentage}"
-      puts "pre-set buy percentage = #{@buy_percentage}"
-
       # find the average buy and sell adjustments for all the better-than-average games
-      successful_cargo_decisions = [{:sell_percentage => @sell_percentage, :buy_percentage => @buy_percentage}]
+      successful_cargo_decisions = []
       DATABASE.get_db[:cargo_decisions].where(:above_avg_score => true).order(:final_score).each do |row|
         successful_cargo_decisions << row
       end
@@ -42,10 +53,14 @@ class Cargos
         @buy_percentage = (buy / (successful_cargo_decisions.length * 1.0)).round(2)
       end
 
+      puts "pre-chaos sell percentage = #{@sell_percentage}"
+      puts "pre-chaos buy percentage = #{@buy_percentage}"
+
+      @sell_percentage = add_chaos(@sell_percentage)
+      @buy_percentage = add_chaos(@buy_percentage)
+
       puts "sell percentage = #{@sell_percentage}"
       puts "buy percentage = #{@buy_percentage}"
-      @sell_percentage = 1.05
-      @buy_percentage = 0.9
 
       DATABASE.get_db[:transaction_meta].all.each do |meta|
         avg_price = meta[:avg_price]
