@@ -69,18 +69,17 @@ class Market
     current_market.each do |cargo_name, cargo_price|
       # add potential profit for any cargo that can be bought on current planet AND you can afford
       if !cargo_price.nil? and credits_if_all_cargo_sold >= cargo_price and Cargos.can_buy(cargo_name, cargo_price)
-        potential_profits << {name: cargo_name, profit: Cargos.get_probable_profit(cargo_name)}
+        num_can_afford = credits_if_all_cargo_sold / cargo_price
+        potential_profits << {name: cargo_name, profit: Cargos.get_probable_profit(cargo_name) * num_can_afford}
       end
     end
     potential_profits.sort! do |a, b|
       b[:profit] <=> a[:profit]
     end
     puts "Current market: #{current_market.to_json}"
-    puts "Potential profits: #{potential_profits.to_json}"
-
-    # TODO: should have sold metal and bought water (maybe fixed?)
-    # current market: {"medical":null,"metal":711,"mining":2506,"narcotics":59552,"water":14120,"weapons":78311}
-    # Not selling metal at 711 because it is below the `sell` price point of 816
+    if credits_if_all_cargo_sold > 0
+      puts "Potential profits: #{Util.add_commas(potential_profits.to_json)}"
+    end
 
     transaction_data = {side: 'sell'}
     current_hold.each do |cargo_name, value|
@@ -95,7 +94,7 @@ class Market
 
         is_last_turn = @game.turns_left == 1
 
-        potential_profit = Cargos.get_probable_profit(cargo_name)
+        potential_profit = Cargos.get_probable_profit(cargo_name, current_market[cargo_name]) * value
         other_cargo_higher_profit = potential_profits.length > 0 && potential_profit < potential_profits[0][:profit]
 
         if Cargos.can_sell(cargo_name, cargo_price) || is_last_turn || other_cargo_higher_profit
@@ -137,7 +136,7 @@ class Market
 
     # sort by price differential to get the best potential value
     possible_cargos.sort! do |a, b|
-      Cargos.get_probable_profit(b[:cargo_name]) <=> Cargos.get_probable_profit(a[:cargo_name])
+      Cargos.get_probable_profit(b[:cargo_name], current_market[b[:cargo_name]]) <=> Cargos.get_probable_profit(a[:cargo_name], current_market[a[:cargo_name]])
     end
     possible_cargos
   end
@@ -166,7 +165,7 @@ class Market
     end
 
     possible_cargos.each do |cargo|
-      puts "#{@game.current_credits} credits left"
+      puts "#{Util.add_commas(@game.current_credits)} credits left"
       if @game.current_credits >= cargo[:cargo_price] and @game.open_bays > 0
         puts "Going to purchase #{cargo[:cargo_name]}..."
         buy_single_cargo(cargo[:cargo_name], 'max')

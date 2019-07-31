@@ -153,7 +153,7 @@ def take_turn(game = Game.new(DATABASE))
 
   game.market.sell_cargo
 
-  game.repay_loanshark
+  game.loan_shark.repay_loanshark
   game.shipyard.buy_bays
 
   # TODO: borrow from loanshark if low price event with high profit chance
@@ -164,7 +164,7 @@ def take_turn(game = Game.new(DATABASE))
 
   game.travel
 
-  puts "At the end of turn ##{game.current_turn}, you have #{game.current_credits} credits"
+  puts "At the end of turn ##{game.current_turn}, you have #{Util.add_commas(game.current_credits)} credits"
   puts
 
   game_over = false

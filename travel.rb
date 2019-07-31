@@ -33,8 +33,7 @@ class Travel
   end
 
   def choose_next_planet
-    credits_after_repayment = @game.current_credits - @game.loan_balance
-    if @game.loan_balance > 0 and @game.current_planet != LOAN_SHARK_PLANET and credits_after_repayment > MIN_CREDITS_AFTER_REPAYMENT
+    if @game.loan_shark.can_repay(true)
       puts "Can repay debt of #{@game.loan_balance} - traveling to #{LOAN_SHARK_PLANET}"
       return LOAN_SHARK_PLANET
     end

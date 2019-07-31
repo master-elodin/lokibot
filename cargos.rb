@@ -1,4 +1,5 @@
 CHAOS_AMT = 0.05
+MIN_BUY_PERCENTAGE = 0.85
 
 def random_bool
   [true, false].sample
@@ -17,6 +18,7 @@ class Cargos
   @sell_percentage = 0
   @buy_percentage = 0
   @prices = {}
+
 
   def self.sell_percentage
     @sell_percentage
@@ -62,7 +64,7 @@ class Cargos
       puts "pre-chaos buy percentage = #{@buy_percentage}"
 
       @sell_percentage = add_chaos(@sell_percentage)
-      @buy_percentage = add_chaos(@buy_percentage)
+      @buy_percentage = [add_chaos(@buy_percentage), MIN_BUY_PERCENTAGE].max
 
       puts "sell percentage = #{@sell_percentage}"
       puts "buy percentage = #{@buy_percentage}"
@@ -89,8 +91,8 @@ class Cargos
     current_market_price >= self.price_points[cargo_name][:sell]
   end
 
-  def self.get_probable_profit(cargo_name)
-    (self.price_points[cargo_name][:sell] + self.price_points[cargo_name][:buy]) / 2
+  def self.get_probable_profit(cargo_name, buy_price = self.price_points[cargo_name][:buy])
+    (self.price_points[cargo_name][:sell] + buy_price) / 2
   end
 
   def self.possible_cargo_value(game, planet_name)
