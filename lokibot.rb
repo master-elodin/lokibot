@@ -210,12 +210,6 @@ def take_turn(game = Game.new(DATABASE))
     add_final_score(game)
     submit_score(game)
 
-    puts "You made these transactions:"
-    transactions_for_game = DATABASE.get_transaction_list(game.id)
-    transactions_for_game.each do |transaction|
-      puts transaction.to_json
-    end
-
     low_instabilities = 0
     high_instabilities = 0
     pirate_attacks = 0
@@ -270,6 +264,17 @@ def take_turn(game = Game.new(DATABASE))
     else
       puts
     end
+
+    num_purchases = 0
+    num_sales = 0
+    DATABASE.get_db[:transaction].where(:game_id => game.id).each do |transaction|
+      if transaction[:type] == 'purchase'
+        num_purchases += 1
+      else
+        num_sales += 1
+      end
+    end
+    Util.log("You made #{num_purchases} purchases and #{num_sales} sales (may include multiple purchases for same cargo)")
 
     puts
     puts "All-time stats"

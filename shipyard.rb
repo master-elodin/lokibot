@@ -30,6 +30,11 @@ class Shipyard
       return
     end
 
+    # if last two turns, don't bother
+    if @game.turns_left < 2
+      return
+    end
+
     potential_credits = @game.current_credits + Cargos.possible_cargo_value(@game, SHIPYARD_PLANET)
     # visit if you can afford the bays (and should buy them) and some cargo afterward
     get_num_bays_to_buy > 0 && potential_credits >= (SHIPYARD_COST + MIN_CREDITS_AFTER_SHIPYARD)
@@ -48,17 +53,6 @@ class Shipyard
     end
 
     # TODO: don't buy bays if higher value
-
-    # TODO: this shouldn't happen - "Num cargo bays: 100 [most filled=17]"
-    # Should buy 75 bays for a cost of 60000 leaving 184541 credits
-    # Buying cargo...
-    # Possible cargo: [{:cargo_name=>"weapons", :cargo_price=>53661}, {:cargo_name=>"mining", :cargo_price=>1938}, {:cargo_name=>"metal", :cargo_price=>413}]
-    # 184541 credits left
-    # Going to purchase weapons...
-    # Buying 3 weapons at 53661 each, for a total cost of 160983
-    # 23558 credits left
-    # Going to purchase mining...
-    # Buying 12 mining at 1938 each, for a total cost of 23256
 
     # if more than X bays already, don't buy more unless they can be filled
     num_theoretical_bays_open = @game.open_bays
