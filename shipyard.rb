@@ -6,7 +6,6 @@ class Shipyard
   HOLD_UTILIZATION_RATIO = 50
   LOT_SIZE = 25
   MAX_BAYS = 1000
-  MAX_PURCHASE_ONE_TIME = 100
   MIN_CREDITS_AFTER_SHIPYARD = 25000
   MIN_TURNS_LEFT = 3
   PURCHASE_COST_RATIO = 0.3
@@ -40,7 +39,7 @@ class Shipyard
     get_num_bays_to_buy > 0 && potential_credits >= (SHIPYARD_COST + MIN_CREDITS_AFTER_SHIPYARD)
   end
 
-  def get_num_bays_to_buy
+  def get_num_bays_to_buy(log_utilization = true)
     # don't try to buy more bays if you've already got the max
     if @game.total_bays == MAX_BAYS
       return 0
@@ -63,7 +62,9 @@ class Shipyard
     num_possible_cargos = get_num_possible_cargos
     potential_hold_utilization = get_hold_utilization(@game.total_bays, num_possible_cargos)
     if potential_hold_utilization < HOLD_UTILIZATION_RATIO
-      puts "Not buying more bays because #{num_possible_cargos} possible cargos (including cargo already on abord) to buy will only fill #{potential_hold_utilization}% of the existing #{@game.total_bays} bays"
+      if log_utilization
+        puts "Not buying more bays because #{num_possible_cargos} possible cargos (including cargo already on abord) to buy will only fill #{potential_hold_utilization}% of the existing #{@game.total_bays} bays"
+      end
       return 0
     end
 
@@ -77,7 +78,9 @@ class Shipyard
     # make sure that current bays are already being utilized except for first time
     current_hold_utilization = get_hold_utilization(@game.total_bays)
     if current_hold_utilization < HOLD_UTILIZATION_RATIO and @game.total_bays == 25
-      puts "Not buying more bays because hold utilization is only #{current_hold_utilization}% of #{@game.total_bays} total bays"
+      if log_utilization
+        puts "Not buying more bays because hold utilization is only #{current_hold_utilization}% of #{@game.total_bays} total bays"
+      end
       return 0
     end
 
@@ -89,13 +92,15 @@ class Shipyard
 
       proposed_utilization = get_hold_utilization(@game.total_bays + (num_lots * LOT_SIZE))
       if proposed_utilization >= HOLD_UTILIZATION_RATIO
-        puts "Potential purchase utilization: #{proposed_utilization}% if buying #{num_lots * LOT_SIZE} more bays for a total of #{@game.total_bays + (num_lots * LOT_SIZE)}"
+        if log_utilization
+          puts "Potential purchase utilization: #{proposed_utilization}% if buying #{num_lots * LOT_SIZE} more bays for a total of #{@game.total_bays + (num_lots * LOT_SIZE)}"
+        end
         break
       end
       # TODO: if low price market event, buy enough bays that all of them will be able to be filled
       num_lots -= 1
     end
-    [num_lots * LOT_SIZE, MAX_PURCHASE_ONE_TIME].min
+    num_lots * LOT_SIZE
   end
 
   def get_num_possible_cargos
@@ -138,7 +143,7 @@ class Shipyard
     end
 
     cost = (num_bays / LOT_SIZE) * SHIPYARD_COST
-    puts "Should buy #{num_bays} bays for a cost of #{cost} leaving #{@game.current_credits - cost} credits (hold utilization at #{get_hold_utilization(@game.total_bays)}%)"
+    Util.log("Should buy #{num_bays} bays for a cost of #{cost} leaving #{@game.current_credits - cost} credits (hold utilization at #{get_hold_utilization(@game.total_bays)}%)")
     @game.take_action('shipyard', {transaction: {side: 'buy', qty: num_bays}})
     true
   end

@@ -173,7 +173,7 @@ def take_turn(game = Game.new(DATABASE))
 
     bay_buy_count += 1
     # if you can buy more bays to fit more cargo, do that
-    if game.current_planet != 'taspra' or game.shipyard.get_num_bays_to_buy == 0
+    if game.current_planet != 'taspra' or game.shipyard.get_num_bays_to_buy(false) == 0
       break
     end
   end

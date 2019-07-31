@@ -1,4 +1,4 @@
-CHAOS_AMT = 0.05
+CHAOS_AMT = 0.1
 MIN_BUY_PERCENTAGE = 0.70
 
 def random_bool
