@@ -19,7 +19,12 @@ class Travel
 
     to_planet = choose_next_planet
 
-    puts "traveling to #{to_planet}"
+    if to_planet.length == 0
+      puts "Empty to_planet. current_planet=#{@game.current_planet}, possible_planets=#{get_possible_travel_planets(@game.current_planet)}"
+      exit 1
+    end
+
+    puts "Traveling to #{to_planet}"
     @game.take_action('travel', {toPlanet: to_planet})
 
     @database.get_db[:travel].insert(:game_id => @game.id,
@@ -65,7 +70,7 @@ class Travel
       possible_planets.delete_at(possible_planets.index('earth'))
     end
 
-    possible_planets.at(rand(possible_planets.length))
+    possible_planets.at(rand(possible_planets.length - 1))
   end
 
   def get_possible_travel_planets(current_planet)
