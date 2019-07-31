@@ -55,18 +55,7 @@ class Shipyard
     # TODO: don't buy bays if higher value
 
     # if more than X bays already, don't buy more unless they can be filled
-    num_theoretical_bays_open = @game.open_bays
-    num_theoretical_credits = @game.current_credits
-    num_possible_cargos = @game.market.get_sellable_cargo_count
-    @game.market.get_possible_cargos.each do |cargo|
-      if num_theoretical_credits >= cargo[:cargo_price] and num_theoretical_bays_open > 0 and num_theoretical_credits > 0
-        num_can_afford = [(num_theoretical_credits / cargo[:cargo_price]).floor, num_theoretical_bays_open].min
-
-        num_possible_cargos += num_can_afford
-        num_theoretical_bays_open -= num_can_afford
-        num_theoretical_credits -= num_can_afford * cargo[:cargo_price]
-      end
-    end
+    num_possible_cargos = get_num_possible_cargos
     potential_hold_utilization = get_hold_utilization(@game.total_bays, num_possible_cargos)
     if potential_hold_utilization < HOLD_UTILIZATION_RATIO
       puts "Not buying more bays because #{num_possible_cargos} possible cargos (including cargo already on abord) to buy will only fill #{potential_hold_utilization}% of the existing #{@game.total_bays} bays"
@@ -102,6 +91,22 @@ class Shipyard
       num_lots -= 1
     end
     [num_lots * LOT_SIZE, MAX_PURCHASE_ONE_TIME].min
+  end
+
+  def get_num_possible_cargos
+    num_theoretical_bays_open = @game.open_bays
+    num_theoretical_credits = @game.current_credits
+    num_possible_cargos = @game.market.get_sellable_cargo_count
+    @game.market.get_possible_cargos(@game.current_credits, false).each do |cargo|
+      if num_theoretical_credits >= cargo[:price] and num_theoretical_bays_open > 0 and num_theoretical_credits > 0
+        num_can_afford = [(num_theoretical_credits / cargo[:price]).floor, num_theoretical_bays_open].min
+
+        num_possible_cargos += num_can_afford
+        num_theoretical_bays_open -= num_can_afford
+        num_theoretical_credits -= num_can_afford * cargo[:price]
+      end
+    end
+    num_possible_cargos
   end
 
   def get_hold_utilization(num_bays, cargo_count = @game.market.max_cargo_count)
