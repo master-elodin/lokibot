@@ -1,5 +1,5 @@
 CHAOS_AMT = 0.05
-MIN_BUY_PERCENTAGE = 0.90
+MIN_BUY_PERCENTAGE = 0.70
 
 def random_bool
   [true, false].sample

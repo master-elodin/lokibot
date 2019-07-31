@@ -11,8 +11,6 @@ class Market
     @market_table = database.get_db[:market]
     @transaction_table = database.get_db[:transaction]
 
-    @current_cargo = {}
-
     @max_cargo_count = 0
   end
 
@@ -48,11 +46,6 @@ class Market
                               :amount => amount,
                               :price => price,
                               :turn_number => @game.current_turn)
-    if type == 'purchase'
-      @current_cargo[name] = amount
-    else
-      @current_cargo[name] = 0
-    end
   end
 
   def sell_cargo
@@ -229,7 +222,7 @@ class Market
 
   def get_sellable_cargo_count
     count = 0
-    @current_cargo.each do |name, num_onboard|
+    current_hold.each do |name, num_onboard|
       count += num_onboard
     end
     count
@@ -237,7 +230,7 @@ class Market
 
   def get_sellable_cargo_value
     potential_credits_from_cargo = 0
-    @current_cargo.each do |name, num_onboard|
+    current_hold.each do |name, num_onboard|
       unless Data.is_cargo_banned(name, @game.current_planet)
         potential_credits_from_cargo += (current_market[name] * num_onboard)
       end

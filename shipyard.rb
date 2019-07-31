@@ -135,5 +135,6 @@ class Shipyard
     cost = (num_bays / LOT_SIZE) * SHIPYARD_COST
     puts "Should buy #{num_bays} bays for a cost of #{cost} leaving #{@game.current_credits - cost} credits (hold utilization at #{get_hold_utilization(@game.total_bays)}%)"
     @game.take_action('shipyard', {transaction: {side: 'buy', qty: num_bays}})
+    true
   end
 end

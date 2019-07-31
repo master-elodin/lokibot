@@ -154,11 +154,29 @@ def take_turn(game = Game.new(DATABASE))
   game.market.sell_cargo
 
   game.loan_shark.repay_loanshark
-  game.shipyard.buy_bays
 
-  # TODO: borrow from loanshark if low price event with high profit chance
-  # TODO: don't buy medical if maybe traveling to taspra
-  game.market.buy_cargo
+  bay_buy_count = 0
+  loop do
+    unless bay_buy_count == 0
+      puts "Buying bays again (#{bay_buy_count})"
+    end
+    if bay_buy_count > 10
+      puts 'something went wrong buying bays'
+      exit 1
+    end
+
+    game.shipyard.buy_bays
+
+    # TODO: borrow from loanshark if low price event with high profit chance
+    # TODO: don't buy medical if maybe traveling to taspra
+    game.market.buy_cargo
+
+    bay_buy_count += 1
+    # if you can buy more bays to fit more cargo, do that
+    if game.current_planet != 'taspra' or game.shipyard.get_num_bays_to_buy == 0
+      break
+    end
+  end
 
   # TODO: bank
 
