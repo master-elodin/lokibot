@@ -48,9 +48,30 @@ class Market
                               :turn_number => @game.current_turn)
   end
 
+  # sell cargo that there's no question about selling
+  def sell_unambigous_cargo
+    tx_log = []
+    transaction_data = {side: 'sell'}
+    current_hold.each do |cargo_name, cargo_amt|
+      cargo_price = current_market[cargo_name]
+      if cargo_amt > 0 and !Data.is_cargo_banned(cargo_name, @game.current_planet) and Cargos.can_sell(cargo_name, cargo_price)
+
+        sell(cargo_name, cargo_amt, cargo_price, transaction_data)
+        tx_log << "[#{cargo_amt} #{cargo_name} at #{cargo_price} for income of #{cargo_price * cargo_amt} credits]"
+      end
+    end
+    if transaction_data.length > 1
+      @game.take_action('trade', {transaction: transaction_data})
+      Util.log("Selling unambigious cargo: #{tx_log.join(', ')}")
+    end
+  end
+
   def sell_cargo
     Util.log("Current market: #{current_market.to_json}")
     puts 'Selling cargo...'
+
+    # sell non-ambiguous cargo before figuring everything else out
+    sell_unambigous_cargo
 
     credits_if_all_cargo_sold = @game.current_credits
     current_hold.each do |cargo_name, value|
@@ -141,11 +162,15 @@ class Market
       end
 
       num_can_afford = [max_credits / cargo_price, @game.open_bays].min
-      possible_cargos << {:name => cargo_name,
-                          :price => cargo_price,
-                          :num_can_afford => num_can_afford,
-                          # TODO: take possible high market events into account
-                          :profit => Cargos.get_probable_profit(cargo_name, purchase_cost_per) * num_can_afford}
+      profit = Cargos.get_probable_profit(cargo_name, purchase_cost_per) * num_can_afford
+
+      if num_can_afford > 0 and profit > 0
+        possible_cargos << {:name => cargo_name,
+                            :price => cargo_price,
+                            :num_can_afford => num_can_afford,
+                            # TODO: take possible high market events into account
+                            :profit => profit}
+      end
     end
 
     # sort by price differential to get the best potential value

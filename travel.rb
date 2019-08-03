@@ -33,6 +33,8 @@ class Travel
   end
 
   def choose_next_planet
+    # TODO: don't travel to loan shark immediately if other things might be better
+
     if @game.loan_shark.can_repay(true)
       puts "Can repay debt of #{@game.loan_balance} - traveling to #{LOAN_SHARK_PLANET}"
       return LOAN_SHARK_PLANET

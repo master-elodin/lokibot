@@ -320,7 +320,7 @@ def take_turn(game = Game.new(DATABASE))
     Util.log("You made #{num_purchases} purchases and #{num_sales} sales (may include multiple purchases for same cargo)")
     puts 'Cargo volumes:'
     cargo_volumes.each do |volume|
-      Util.log("#{volume[:name].ljust(10)} #{volume[:buy]} bought and #{volume[:sell]} sold for probable profit of #{volume[:tx_total_price]}")
+      Util.log("#{volume[:name].ljust(10)} #{volume[:buy]} bought and #{volume[:sell]} sold for individual profit of #{volume[:tx_total_price]}")
     end
 
     puts
