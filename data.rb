@@ -139,6 +139,13 @@ class DatabaseConnector
       Float :buy_percentage
     end
 
+    DB.create_table? :fuel_depot do
+      primary_key :id
+      String :game_id
+      Integer :num_purchases
+      Integer :cost
+    end
+
     @loanshark = DB[:loanshark]
     @score = DB[:score]
     @transaction = DB[:transaction]

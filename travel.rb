@@ -2,6 +2,7 @@ require_relative 'shipyard'
 
 class Travel
 
+  FUEL_DEPOT_PLANET = 'pertia'
   LOAN_SHARK_PLANET = 'umbriel'
   SHIPYARD_PLANET = 'taspra'
   MIN_CREDITS_AFTER_REPAYMENT = 10000
@@ -43,6 +44,10 @@ class Travel
     # TODO: don't always visit shipyard if there are high value cargos to sell
     if @game.shipyard.should_visit
       return SHIPYARD_PLANET
+    end
+
+    if @game.fuel_depot.should_visit
+      return FUEL_DEPOT_PLANET
     end
 
     possible_planets = get_possible_travel_planets(@game.current_planet).sort do |a, b|

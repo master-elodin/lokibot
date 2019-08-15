@@ -1,11 +1,12 @@
 require_relative 'cargos'
+require_relative 'fuel'
 require_relative 'loanshark'
 require_relative 'market'
 require_relative 'travel'
 
 class Game
 
-  attr_reader :id, :game_data, :loan_shark, :market, :shipyard, :db, :current_market_low, :current_market_high
+  attr_reader :id, :game_data, :loan_shark, :market, :shipyard, :fuel_depot, :db, :current_market_low, :current_market_high
 
   def initialize(database)
     puts 'Starting new game...'
@@ -18,6 +19,7 @@ class Game
     @travel = Travel.new(self, database)
     @shipyard = Shipyard.new(self, database)
     @loan_shark = Loanshark.new(self)
+    @fuel_depot = Fuel.new(self)
 
     @db = database
 

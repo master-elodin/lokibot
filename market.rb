@@ -63,6 +63,9 @@ class Market
     if transaction_data.length > 1
       @game.take_action('trade', {transaction: transaction_data})
       Util.log("Selling unambigious cargo: #{tx_log.join(', ')}")
+      true
+    else
+      false
     end
   end
 
@@ -71,7 +74,7 @@ class Market
     puts 'Selling cargo...'
 
     # sell non-ambiguous cargo before figuring everything else out
-    sell_unambigous_cargo
+    did_sell_unambiguous_cargo = sell_unambigous_cargo
 
     credits_if_all_cargo_sold = @game.current_credits
     current_hold.each do |cargo_name, value|
@@ -123,7 +126,7 @@ class Market
     end
 
     # size will be 1 if only `side: sell` exists
-    if transaction_data.size == 1
+    if transaction_data.size == 1 and !did_sell_unambiguous_cargo
       puts 'Nothing to sell'
     else
       @game.take_action('trade', {transaction: transaction_data})

@@ -117,7 +117,8 @@ def add_final_score(game)
                                  :unsold_cargo_name => cargo_names.to_json,
                                  :final_planet => game.current_planet,
                                  :total_bays => game.total_bays,
-                                 :max_cargo_count => game.market.max_cargo_count)
+                                 :max_cargo_count => game.market.max_cargo_count,
+                                 :num_turns => game.current_turn)
 
   avg_final_score = DATABASE.get_average_final_score.round(0)
   DATABASE.get_db[:cargo_decisions].insert(:game_id => game.id,
@@ -128,7 +129,7 @@ def add_final_score(game)
 end
 
 def submit_score(game)
-  if game.current_turn < 18
+  if game.turns_left > 1
     puts "Game is only on turn #{game.current_turn} - cannot submit score"
   elsif SHOULD_SUBMIT_SCORE
     score_response = HTTParty.post('https://skysmuggler.com/scores/submit', body: {gameId: game.id, name: 'joe rebel'}.to_json)
@@ -178,6 +179,7 @@ def take_turn(game = Game.new(DATABASE))
     end
   end
 
+  game.fuel_depot.buy
   # TODO: bank
 
   game.travel
@@ -267,7 +269,8 @@ def take_turn(game = Game.new(DATABASE))
 
     puts
     puts 'Game stats:'
-    puts "Ending credits: #{Util.add_commas(game.current_credits)}"
+    Util.log("Ending credits: #{game.current_credits}")
+    Util.log("Num turns: #{game.current_turn} (#{game.fuel_depot.num_purchases} fuel cells purchased)")
     puts "Num cargo bays: #{game.total_bays} [most filled=#{game.market.max_cargo_count}]"
     puts "Cargo price percentages = [sell=#{Cargos.sell_percentage}, buy=#{Cargos.buy_percentage}]"
     puts "Total economic instabilities: #{low_instabilities + high_instabilities} [#{low_instabilities} low, #{high_instabilities} high]"
@@ -327,7 +330,7 @@ def take_turn(game = Game.new(DATABASE))
     puts "All-time stats"
     avg_total_score = DATABASE.get_average_final_score.round(0)
     diff_from_avg = (game.current_credits - avg_total_score)
-    puts "Average total score: #{Util.add_commas(avg_total_score)} [this game: #{'+' if diff_from_avg > 0}#{Util.add_commas(diff_from_avg)}]"
+    Util.log("Average total score: #{avg_total_score} [this game: #{'+' if diff_from_avg > 0}#{diff_from_avg}]")
     puts "Percent games with loanshark forced repayment: #{DATABASE.get_percent_forced_repayment}%"
     puts "Percent games with loanshark forced repayment recovered: #{DATABASE.get_percent_forced_repayment_recovered}%"
   end
