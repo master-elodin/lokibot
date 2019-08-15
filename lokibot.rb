@@ -345,7 +345,7 @@ highest_game_score = 0
 highest_game_log_name = ''
 
 game_number = DATABASE.get_db[:score].all.length
-num_games_to_run = 10
+num_games_to_run = 4
 num_games_to_run.times do |i|
   game_number += 1
   Util.log("Starting game ##{game_number} (#{num_games_to_run - i} left)", true)
@@ -354,7 +354,7 @@ num_games_to_run.times do |i|
   ending = Process.clock_gettime(Process::CLOCK_MONOTONIC)
   Util.log("Completed game in #{((ending - starting) * 1000).round(3)} milliseconds", true)
 
-  file_name = "game-#{game_number}.log"
+  file_name = "logs/game-#{game_number}.log"
   if game.current_credits > highest_game_score
     highest_game_log_name = file_name
     highest_game_score = game.current_credits

@@ -20,7 +20,7 @@ class Travel
 
     to_planet = choose_next_planet
 
-    if to_planet.length == 0
+    if to_planet.nil? or to_planet.length == 0
       Util.log("Empty to_planet. current_planet=#{@game.current_planet}, possible_planets=#{get_possible_travel_planets(@game.current_planet)}")
       exit 1
     end

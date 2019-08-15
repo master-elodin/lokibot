@@ -47,7 +47,7 @@ class Loanshark
                                            :forced_repayment_recovered => false,
                                            :loan_amt_repaid => loan_amt_start_turn,
                                            :turn_repaid => @game.current_turn)
-      else
+      elsif @game.current_planet == LOAN_SHARK_PLANET
         Util.log("Cannot repay loan balance of #{@game.loan_balance} credits")
       end
     end
