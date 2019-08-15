@@ -34,18 +34,22 @@ class Loanshark
   end
 
   def repay_loanshark
-    if can_repay(false)
-      loan_amt_start_turn = @game.loan_balance
-      credits_after_repayment = @game.current_credits - loan_amt_start_turn + @game.market.get_sellable_cargo_value
+    unless @game.loan_balance == 0
+      if can_repay(false)
+        loan_amt_start_turn = @game.loan_balance
+        credits_after_repayment = @game.current_credits - loan_amt_start_turn + @game.market.get_sellable_cargo_value
 
-      puts "Repaying loan of #{loan_amt_start_turn}, leaving balance of #{credits_after_repayment}"
-      @game.take_action('loanshark', {transaction: {qty: loan_amt_start_turn, side: "repay"}})
+        Util.log("Repaying loan of #{loan_amt_start_turn}, leaving balance of #{credits_after_repayment}")
+        @game.take_action('loanshark', {transaction: {qty: loan_amt_start_turn, side: "repay"}})
 
-      @game.db.get_db[:loanshark].insert(:game_id => @id,
-                                    :forced_repayment => false,
-                                    :forced_repayment_recovered => false,
-                                    :loan_amt_repaid => loan_amt_start_turn,
-                                    :turn_repaid => @game.current_turn)
+        @game.db.get_db[:loanshark].insert(:game_id => @id,
+                                           :forced_repayment => false,
+                                           :forced_repayment_recovered => false,
+                                           :loan_amt_repaid => loan_amt_start_turn,
+                                           :turn_repaid => @game.current_turn)
+      else
+        Util.log("Cannot repay loan balance of #{@game.loan_balance} credits")
+      end
     end
   end
 end

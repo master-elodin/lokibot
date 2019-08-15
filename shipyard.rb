@@ -100,7 +100,7 @@ class Shipyard
       # TODO: if low price market event, buy enough bays that all of them will be able to be filled
       num_lots -= 1
     end
-    [num_lots * LOT_SIZE, MAX_BAYS].min
+    [num_lots * LOT_SIZE, MAX_BAYS - @game.total_bays].min
   end
 
   def get_num_possible_cargos

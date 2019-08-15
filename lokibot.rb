@@ -270,7 +270,7 @@ def take_turn(game = Game.new(DATABASE))
     puts
     puts 'Game stats:'
     Util.log("Ending credits: #{game.current_credits}")
-    Util.log("Num turns: #{game.current_turn} (#{game.fuel_depot.num_purchases} fuel cells purchased)")
+    Util.log("Num turns: #{game.current_turn} (#{game.fuel_depot.num_purchases} fuel cells purchased #{"for a cost of #{game.fuel_depot.total_cost}" if game.fuel_depot.num_purchases > 0})")
     puts "Num cargo bays: #{game.total_bays} [most filled=#{game.market.max_cargo_count}]"
     puts "Cargo price percentages = [sell=#{Cargos.sell_percentage}, buy=#{Cargos.buy_percentage}]"
     puts "Total economic instabilities: #{low_instabilities + high_instabilities} [#{low_instabilities} low, #{high_instabilities} high]"

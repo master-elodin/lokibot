@@ -120,7 +120,7 @@ class Game
   end
 
   def current_turn
-    (20 - turns_left) + 1
+    ((20 + @fuel_depot.num_purchases * 5) - turns_left) + 1
   end
 
   def turns_left

@@ -109,11 +109,15 @@ class Market
           next
         end
 
-        if is_last_turn or Cargos.can_sell(cargo_name, cargo_price)
+        # sell cargo if necessary to repay loan
+        sell_to_repay_debt = (@game.current_planet == 'umbriel' and @game.current_credits < @game.loan_balance and @game.current_turn > 5)
+
+        if is_last_turn or sell_to_repay_debt or Cargos.can_sell(cargo_name, cargo_price)
           # if last turn, sell everything regardless of price
           # or if the sale price is right, sell it
+          # or if it needs to be sold to repay the loan, sell it
           sell(cargo_name, value, cargo_price, transaction_data)
-          Util.log("Selling #{value} #{cargo_name} at #{cargo_price} for a total income of #{cargo_price * value} credits")
+          Util.log("Selling #{value} #{cargo_name} at #{cargo_price} for a total income of #{cargo_price * value} credits #{'(to repay debt)' if sell_to_repay_debt}")
         elsif other_cargo_higher_profit
           # if other cargo is higher profit, it doesn't matter if this cargo is below sell point
           sell(cargo_name, value, cargo_price, transaction_data)

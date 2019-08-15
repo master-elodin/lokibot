@@ -2,7 +2,7 @@ require_relative 'util'
 
 class Fuel
 
-  attr_reader :num_purchases
+  attr_reader :num_purchases, :total_cost
 
   FUEL_DEPOT_PLANET = 'pertia'
   INITIAL_PRICE = 50000
@@ -10,6 +10,7 @@ class Fuel
   def initialize(game)
     @game = game
     @num_purchases = 0
+    @total_cost = 0
   end
 
   def should_visit
@@ -38,6 +39,7 @@ class Fuel
       @game.take_action('fueldepot', {transaction: {side: 'buy', qty: 5}})
 
       @num_purchases += 1
+      @total_cost += cost
 
       @game.db.get_db[:fuel_depot]
           .insert(
