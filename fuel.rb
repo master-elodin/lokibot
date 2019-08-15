@@ -34,7 +34,7 @@ class Fuel
 
     do_buy = should_buy
     cost = get_cost
-    Util.log("should #{'not' unless do_buy} buy fuel for #{cost} with #{@game.current_credits} credits on board")
+    Util.log("should #{'not ' unless do_buy}buy fuel for #{cost} with #{@game.current_credits} credits on board")
     if should_buy
       @game.take_action('fueldepot', {transaction: {side: 'buy', qty: 5}})
 
@@ -45,8 +45,11 @@ class Fuel
           .insert(
               :game_id => @game.id,
               :num_purchases => @num_purchases,
-              :cost => cost
+              :cost => cost,
+              :turn_number => @game.current_turn,
+              :credits_after_purchase => @game.current_credits
           )
+
       Util.log("Purchased fuel for #{cost}")
     end
   end

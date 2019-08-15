@@ -144,6 +144,8 @@ class DatabaseConnector
       String :game_id
       Integer :num_purchases
       Integer :cost
+      Integer :turn_number
+      Integer :credits_after_purchase
     end
 
     @loanshark = DB[:loanshark]
