@@ -9,9 +9,9 @@ class Game
   attr_reader :id, :game_data, :loan_shark, :market, :shipyard, :fuel_depot, :db, :current_market_low, :current_market_high
 
   def initialize(database)
-    Util.log('Starting new game...')
     game_data = HTTParty.get('https://skysmuggler.com/game/new_game').parsed_response
 
+    Cargos.reset
     @game_data = game_data
     @id = game_data['gameId']
 

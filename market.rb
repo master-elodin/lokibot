@@ -206,8 +206,8 @@ class Market
 
     # don't keep playing the game if still no cargo to buy after turn 2
     if possible_cargos.length == 0 and @game.current_credits == 20000 and @game.current_turn == 3
-      Util.log("Haven't made any money after turn 3 and no cargo to buy... exiting now")
-      exit 1
+      Util.log("Haven't made any money after turn 3 and no cargo to buy... ending game", true)
+      return true
     end
 
     possible_cargos.each do |cargo|
@@ -225,6 +225,7 @@ class Market
       hold_size += amt
     end
     @max_cargo_count = [hold_size, @max_cargo_count].max
+    false
   end
 
   def buy_single_cargo(cargo_name, cargo_amt = 'max')

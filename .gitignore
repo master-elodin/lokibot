@@ -2,3 +2,4 @@ lokibot.iml
 .idea/
 lokibot.db
 out/
+*.log

@@ -35,7 +35,7 @@ def update_market_meta
     new_meta[cargo_name][:num_averages] += 1
   end
 
-  # TODO: don't query all transactions every time (low priority since it only takes 24ms anyway)
+  # TODO: don't query all transactions every time
   # get average transaction data (checks ALL transactions right now)
   DATABASE.get_db[:transaction].all.each do |row|
     cargo_name = row[:name]
@@ -75,7 +75,7 @@ def update_market_meta
   end
 
   ending = Process.clock_gettime(Process::CLOCK_MONOTONIC)
-  Util.log("Finished updating market meta in #{((ending - starting) * 1000).round(3)} milliseconds")
+  Util.log("Finished updating market meta in #{((ending - starting) * 1000).round(3)} milliseconds", true)
   Util.add_newline
 end
 
@@ -170,7 +170,11 @@ def take_turn(game = Game.new(DATABASE))
 
     # TODO: borrow from loanshark if low price event with high profit chance
     # TODO: don't buy medical if maybe traveling to taspra
-    game.market.buy_cargo
+    game_ended_early = game.market.buy_cargo
+    if game_ended_early
+      # just return rather than exit, in case game is in loop
+      return
+    end
 
     bay_buy_count += 1
     # if you can buy more bays to fit more cargo, do that
@@ -184,7 +188,7 @@ def take_turn(game = Game.new(DATABASE))
 
   game.travel
 
-  Util.log("At the end of turn ##{game.current_turn}, you have #{game.current_credits} credits")
+  Util.log("At the end of turn ##{game.current_turn}, you have #{game.current_credits} credits", true)
   Util.add_newline
 
   game_over = false
@@ -269,7 +273,7 @@ def take_turn(game = Game.new(DATABASE))
 
     Util.add_newline
     Util.log('Game stats:')
-    Util.log("Ending credits: #{game.current_credits}")
+    Util.log("Ending credits: #{game.current_credits}", true)
     Util.log("Num turns: #{game.current_turn} (#{game.fuel_depot.num_purchases} fuel cells purchased #{"for a cost of #{game.fuel_depot.total_cost}" if game.fuel_depot.num_purchases > 0})")
     Util.log("Num cargo bays: #{game.total_bays} [most filled=#{game.market.max_cargo_count}]")
     Util.log("Cargo price percentages = [sell=#{Cargos.sell_percentage}, buy=#{Cargos.buy_percentage}]")
@@ -281,7 +285,7 @@ def take_turn(game = Game.new(DATABASE))
       raiding_log += "#{narcotics_lost} narcotics lost, "
       raiding_log += "#{weapons_lost} weapons lost]"
     end
-    Util.log(raiding_log)
+    Util.log(raiding_log, authorities_raid > 0)
     Util.add_newline
 
     num_purchases = 0
@@ -329,13 +333,24 @@ def take_turn(game = Game.new(DATABASE))
     Util.log("All-time stats")
     avg_total_score = DATABASE.get_average_final_score.round(0)
     diff_from_avg = (game.current_credits - avg_total_score)
-    Util.log("Average total score: #{avg_total_score} [this game: #{'+' if diff_from_avg > 0}#{diff_from_avg}]")
+    Util.log("Average total score: #{avg_total_score} [this game: #{'+' if diff_from_avg > 0}#{diff_from_avg}]", true)
     Util.log("Percent games with loan shark forced repayment: #{DATABASE.get_percent_forced_repayment}%")
     Util.log("Percent games with loan shark forced repayment recovered: #{DATABASE.get_percent_forced_repayment_recovered}%")
   end
 end
 
-starting = Process.clock_gettime(Process::CLOCK_MONOTONIC)
-take_turn
-ending = Process.clock_gettime(Process::CLOCK_MONOTONIC)
-Util.log("Completed game in #{((ending - starting) * 1000).round(3)} milliseconds")
+game_number = DATABASE.get_db[:score].length
+10.times do
+  game_number += 1
+  Util.log("Starting game ##{game_number}", true)
+  starting = Process.clock_gettime(Process::CLOCK_MONOTONIC)
+  take_turn
+  ending = Process.clock_gettime(Process::CLOCK_MONOTONIC)
+  Util.log("Completed game in #{((ending - starting) * 1000).round(3)} milliseconds", true)
+
+  file_name = "game-#{game_number}.log"
+  puts "Logged to #{file_name}"
+  puts
+  Util.log_to_file(file_name)
+  Util.clear
+end

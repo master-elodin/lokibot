@@ -1,20 +1,32 @@
 class Util
 
-  LOG_ALL = true
+  LOG_ALL = false
   @log_statements = []
 
   def self.print
     @log_statements.each(&method(:puts))
   end
 
+  def self.log_to_file(file_name)
+    File.open(file_name, 'w') do |file|
+      @log_statements.each do |log|
+        file.puts log
+      end
+    end
+  end
+
+  def self.clear
+    @log_statements = []
+  end
+
   def self.add_newline
     self.log('')
   end
 
-  def self.log(text)
+  def self.log(text, do_log = LOG_ALL)
     log = self.add_commas(text)
     @log_statements << log
-    if LOG_ALL
+    if do_log
       puts log
     end
   end
