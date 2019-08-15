@@ -14,6 +14,7 @@ class Game
     Cargos.reset
     @game_data = game_data
     @id = game_data['gameId']
+    Util.log("Game ID: #{@id}")
 
     @market = Market.new(self, database)
     @travel = Travel.new(self, database)
