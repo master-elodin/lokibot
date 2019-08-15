@@ -35,46 +35,38 @@ class DatabaseConnector
     # loanshark - loan_amt_repayed, turn_repayed
     # notifications - cargo_type
     # transaction - avg_amt_purchased, avg_amt_sold, total_amt_purchased, total_amt_sold;
+    # score - credits_after_purchase, turn_number
 
-    unless DB.table_exists?(:loanshark)
-      DB.create_table :loanshark do
-        primary_key :id
-        String :game_id
-        Boolean :forced_repayment
-        Boolean :forced_repayment_recovered
-        Integer :loan_amt_repaid
-        Integer :turn_repaid
-        Integer :sellable_cargo_value_at_repayment
-      end
-      puts 'Created new loanshark table'
+    DB.create_table? :loanshark do
+      primary_key :id
+      String :game_id
+      Boolean :forced_repayment
+      Boolean :forced_repayment_recovered
+      Integer :loan_amt_repaid
+      Integer :turn_repaid
+      Integer :sellable_cargo_value_at_repayment
     end
 
-    unless DB.table_exists?(:score)
-      DB.create_table :score do
-        primary_key :id
-        String :game_id
-        Integer :final_score
-        Boolean :unsold_cargo
-        String :unsold_cargo_name
-        String :final_planet
-        Integer :total_bays
-        Integer :max_cargo_count
-      end
-      puts 'Created new score table'
+    DB.create_table? :score do
+      primary_key :id
+      String :game_id
+      Integer :final_score
+      Boolean :unsold_cargo
+      String :unsold_cargo_name
+      String :final_planet
+      Integer :total_bays
+      Integer :max_cargo_count
     end
 
-    unless DB.table_exists?(:transaction)
-      DB.create_table :transaction do
-        primary_key :id
-        String :game_id
-        String :planet # planet it was purchased on
-        String :type # purchase/sale
-        String :name # e.g. water, metal
-        Integer :amount # amount of the cargo purchased
-        Integer :price # price per cargo
-        Integer :turn_number
-      end
-      puts 'Created new transaction table'
+    DB.create_table? :transaction do
+      primary_key :id
+      String :game_id
+      String :planet # planet it was purchased on
+      String :type # purchase/sale
+      String :name # e.g. water, metal
+      Integer :amount # amount of the cargo purchased
+      Integer :price # price per cargo
+      Integer :turn_number
     end
 
     # record EVERY cargo on EVERY planet

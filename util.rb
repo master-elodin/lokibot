@@ -1,7 +1,22 @@
 class Util
 
+  LOG_ALL = true
+  @log_statements = []
+
+  def self.print
+    @log_statements.each(&method(:puts))
+  end
+
+  def self.add_newline
+    self.log('')
+  end
+
   def self.log(text)
-    puts "#{self.add_commas(text)}"
+    log = self.add_commas(text)
+    @log_statements << log
+    if LOG_ALL
+      puts log
+    end
   end
 
   def self.add_commas(text)

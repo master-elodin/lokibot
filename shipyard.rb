@@ -63,7 +63,7 @@ class Shipyard
     potential_hold_utilization = get_hold_utilization(@game.total_bays, num_possible_cargos)
     if potential_hold_utilization < HOLD_UTILIZATION_RATIO
       if log_utilization
-        puts "Not buying more bays because #{num_possible_cargos} possible cargos (including cargo already on abord) to buy will only fill #{potential_hold_utilization}% of the existing #{@game.total_bays} bays"
+        Util.log("Not buying more bays because #{num_possible_cargos} possible cargos (including cargo already on abord) to buy will only fill #{potential_hold_utilization}% of the existing #{@game.total_bays} bays")
       end
       return 0
     end
@@ -79,7 +79,7 @@ class Shipyard
     current_hold_utilization = get_hold_utilization(@game.total_bays)
     if current_hold_utilization < HOLD_UTILIZATION_RATIO and @game.total_bays == 25
       if log_utilization
-        puts "Not buying more bays because hold utilization is only #{current_hold_utilization}% of #{@game.total_bays} total bays"
+        Util.log("Not buying more bays because hold utilization is only #{current_hold_utilization}% of #{@game.total_bays} total bays")
       end
       return 0
     end
@@ -93,7 +93,7 @@ class Shipyard
       proposed_utilization = get_hold_utilization(@game.total_bays + (num_lots * LOT_SIZE))
       if proposed_utilization >= HOLD_UTILIZATION_RATIO
         if log_utilization
-          puts "Potential purchase utilization: #{proposed_utilization}% if buying #{num_lots * LOT_SIZE} more bays for a total of #{@game.total_bays + (num_lots * LOT_SIZE)}"
+          Util.log("Potential purchase utilization: #{proposed_utilization}% if buying #{num_lots * LOT_SIZE} more bays for a total of #{@game.total_bays + (num_lots * LOT_SIZE)}")
         end
         break
       end

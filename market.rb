@@ -71,7 +71,7 @@ class Market
 
   def sell_cargo
     Util.log("Current market: #{current_market.to_json}")
-    puts 'Selling cargo...'
+    Util.log('Selling cargo...')
 
     # sell non-ambiguous cargo before figuring everything else out
     did_sell_unambiguous_cargo = sell_unambigous_cargo
@@ -85,17 +85,17 @@ class Market
 
     potential_profits = get_possible_cargos(credits_if_all_cargo_sold, false)
     if credits_if_all_cargo_sold > 0
-      puts "Potential profits: #{Util.add_commas(potential_profits.to_json)}"
+      Util.log("Potential profits: #{potential_profits.to_json}")
     end
 
     transaction_data = {side: 'sell'}
     current_hold.each do |cargo_name, value|
       cargo_price = current_market[cargo_name]
       if value > 0 and Data.is_cargo_banned(cargo_name, @game.current_planet)
-        puts "Cannot sell `#{cargo_name}` on #{@game.current_planet}"
+        Util.log("Cannot sell `#{cargo_name}` on #{@game.current_planet}")
       elsif value > 0
         if @game.current_market_low == cargo_name and @game.turns_left > 1
-          puts "Not selling #{value} #{cargo_name} because it's at a super low price (#{cargo_price}) right now"
+          Util.log("Not selling #{value} #{cargo_name} because it's at a super low price (#{cargo_price}) right now")
           next
         end
 
@@ -131,7 +131,7 @@ class Market
 
     # size will be 1 if only `side: sell` exists
     if transaction_data.size == 1 and !did_sell_unambiguous_cargo
-      puts 'Nothing to sell'
+      Util.log('Nothing to sell')
     else
       @game.take_action('trade', {transaction: transaction_data})
     end
@@ -188,32 +188,32 @@ class Market
   end
 
   def buy_cargo
-    puts 'Buying cargo...'
+    Util.log('Buying cargo...')
 
     # don't over-buy
     if @game.open_bays == 0
-      puts "No space to buy cargo"
+      Util.log("No space to buy cargo")
       return
     end
 
     if @game.turns_left == 1
-      puts "Not buying cargo on last turn"
+      Util.log("Not buying cargo on last turn")
       return
     end
 
     possible_cargos = get_possible_cargos(@game.current_credits, true)
-    puts "Possible cargo: #{Util.add_commas(possible_cargos.to_json)}"
+    Util.log("Possible cargo: #{Util.add_commas(possible_cargos.to_json)}")
 
     # don't keep playing the game if still no cargo to buy after turn 2
     if possible_cargos.length == 0 and @game.current_credits == 20000 and @game.current_turn == 3
-      puts "Haven't made any money after turn 3 and no cargo to buy... exiting now"
+      Util.log("Haven't made any money after turn 3 and no cargo to buy... exiting now")
       exit 1
     end
 
     possible_cargos.each do |cargo|
-      puts "#{Util.add_commas(@game.current_credits)} credits left"
+      Util.log("#{@game.current_credits} credits left")
       if @game.current_credits >= cargo[:price] and @game.open_bays > 0
-        puts "Going to purchase #{cargo[:name]}..."
+        Util.log("Going to purchase #{cargo[:name]}...")
         buy_single_cargo(cargo[:name])
       else
         break
@@ -234,12 +234,12 @@ class Market
     end
 
     unless Cargos.can_buy(cargo_name, cargo_price)
-      puts "Not buying #{cargo_name} at #{cargo_price} because it is above buy price point of #{Cargos.get_price_point(cargo_name)[:buy]}"
+      Util.log("Not buying #{cargo_name} at #{cargo_price} because it is above buy price point of #{Cargos.get_price_point(cargo_name)[:buy]}")
       return
     end
 
     unless cargo_amt > 0
-      puts "Nothing to buy"
+      Util.log("Nothing to buy")
       return
     end
 

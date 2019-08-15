@@ -9,7 +9,7 @@ class Game
   attr_reader :id, :game_data, :loan_shark, :market, :shipyard, :fuel_depot, :db, :current_market_low, :current_market_high
 
   def initialize(database)
-    puts 'Starting new game...'
+    Util.log('Starting new game...')
     game_data = HTTParty.get('https://skysmuggler.com/game/new_game').parsed_response
 
     @game_data = game_data
@@ -43,8 +43,8 @@ class Game
     @game_data = HTTParty.post("https://skysmuggler.com/game/#{relative_url}", body: body.to_json)
 
     if game_state.nil?
-      puts @game_data
-      puts "Something went wrong with the request [#{relative_url}, #{body.to_json}]"
+      Util.log(@game_data)
+      Util.log("Something went wrong with the request [#{relative_url}, #{body.to_json}]")
       exit 1
     end
 
@@ -59,7 +59,7 @@ class Game
   def save_notifications
     unless get_notifications.nil?
       get_notifications.each do |notification|
-        puts "Notification: #{notification}"
+        Util.log("Notification: #{notification}")
 
         cargo_name = ''
         cargo_price = nil

@@ -14,18 +14,18 @@ class Travel
 
   def travel
     if @game.turns_left == 1
-      puts "Not traveling on last turn"
+      Util.log("Not traveling on last turn")
       return
     end
 
     to_planet = choose_next_planet
 
     if to_planet.length == 0
-      puts "Empty to_planet. current_planet=#{@game.current_planet}, possible_planets=#{get_possible_travel_planets(@game.current_planet)}"
+      Util.log("Empty to_planet. current_planet=#{@game.current_planet}, possible_planets=#{get_possible_travel_planets(@game.current_planet)}")
       exit 1
     end
 
-    puts "Traveling to #{to_planet}"
+    Util.log("Traveling to #{to_planet}")
     @game.take_action('travel', {toPlanet: to_planet})
 
     @database.get_db[:travel].insert(:game_id => @game.id,

@@ -1,5 +1,5 @@
 CHAOS_AMT = 0.1
-MIN_BUY_PERCENTAGE = 0.70
+MIN_BUY_PERCENTAGE = 0.60
 
 def random_bool
   [true, false].sample
@@ -34,7 +34,7 @@ class Cargos
 
   def self.price_points
     if @prices.length == 0
-      puts 'Initializing cargo prices...'
+      Util.log('Initializing cargo prices...')
 
       # find the average buy and sell adjustments for all the better-than-average games
       successful_cargo_decisions = []
@@ -60,20 +60,20 @@ class Cargos
         @buy_percentage = (buy / (total_weight * 1.0)).round(2)
       end
 
-      puts "pre-chaos sell percentage = #{@sell_percentage}"
-      puts "pre-chaos buy percentage = #{@buy_percentage}"
+      Util.log("pre-chaos sell percentage = #{@sell_percentage}")
+      Util.log("pre-chaos buy percentage = #{@buy_percentage}")
 
       @sell_percentage = add_chaos(@sell_percentage)
       @buy_percentage = [add_chaos(@buy_percentage), MIN_BUY_PERCENTAGE].max
 
-      puts "sell percentage = #{@sell_percentage}"
-      puts "buy percentage = #{@buy_percentage}"
+      Util.log("sell percentage = #{@sell_percentage}")
+      Util.log("buy percentage = #{@buy_percentage}")
 
       DATABASE.get_db[:transaction_meta].all.each do |meta|
         avg_price = meta[:avg_price]
         # adjust prices based on average price for the given cargo all the times it's been seen
         @prices[meta[:name]] = {:sell => (avg_price * @sell_percentage).round(0), :buy => (avg_price * @buy_percentage).round(0)}
-        puts "#{meta[:name]} = #{@prices[meta[:name]]}"
+        Util.log("#{meta[:name]} = #{@prices[meta[:name]]}")
       end
     end
     @prices

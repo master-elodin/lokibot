@@ -10,8 +10,8 @@ DATABASE = DatabaseConnector.new
 
 # summarize all the data from all the games
 def update_market_meta
-  puts
-  puts 'Updating market meta...'
+  Util.add_newline
+  Util.log('Updating market meta...')
   starting = Process.clock_gettime(Process::CLOCK_MONOTONIC)
 
   new_meta = {}
@@ -75,8 +75,8 @@ def update_market_meta
   end
 
   ending = Process.clock_gettime(Process::CLOCK_MONOTONIC)
-  puts "Finished updating market meta in #{((ending - starting) * 1000).round(3)} milliseconds"
-  puts
+  Util.log("Finished updating market meta in #{((ending - starting) * 1000).round(3)} milliseconds")
+  Util.add_newline
 end
 
 def summarize_market(game_id)
@@ -130,19 +130,19 @@ end
 
 def submit_score(game)
   if game.turns_left > 1
-    puts "Game is only on turn #{game.current_turn} - cannot submit score"
+    Util.log("Game is only on turn #{game.current_turn} - cannot submit score")
   elsif SHOULD_SUBMIT_SCORE
     score_response = HTTParty.post('https://skysmuggler.com/scores/submit', body: {gameId: game.id, name: 'joe rebel'}.to_json)
 
-    puts "Score response: #{score_response}"
+    Util.log("Score response: #{score_response}")
     if score_response['message'] == 'New high score!'
       HTTParty.post('https://skysmuggler.com/scores/update_name', body: {gameId: game.id, newName: SCORE_NAME}.to_json)
     else
-      puts "Not a high score"
+      Util.log("Not a high score")
     end
   else
-    puts 'Submitting scores is turned off'
-    puts
+    Util.log('Submitting scores is turned off')
+    Util.add_newline
   end
 end
 
@@ -159,10 +159,10 @@ def take_turn(game = Game.new(DATABASE))
   bay_buy_count = 0
   loop do
     unless bay_buy_count == 0
-      puts "Buying bays again (#{bay_buy_count})"
+      Util.log("Buying bays again (#{bay_buy_count})")
     end
     if bay_buy_count > 10
-      puts 'something went wrong buying bays'
+      Util.log('something went wrong buying bays')
       exit 1
     end
 
@@ -184,19 +184,19 @@ def take_turn(game = Game.new(DATABASE))
 
   game.travel
 
-  puts "At the end of turn ##{game.current_turn}, you have #{Util.add_commas(game.current_credits)} credits"
-  puts
+  Util.log("At the end of turn ##{game.current_turn}, you have #{game.current_credits} credits")
+  Util.add_newline
 
   game_over = false
   if game.loan_shark_attacked
-    puts 'Attacked by loan shark'
+    Util.log('Attacked by loan shark')
     sellable_cargo_value = game.market.get_sellable_cargo_value
     forced_repayment_recoverable = sellable_cargo_value >= MIN_CREDITS_AFTER_REPAYMENT
     if not forced_repayment_recoverable
       game_over = true
-      puts 'Putting you out of your misery - you have no credits left and not enough cargo to be worth selling'
+      Util.log('Putting you out of your misery - you have no credits left and not enough cargo to be worth selling')
     elsif game.turns_left > 1
-      puts "You have 0 credits, but you have #{sellable_cargo_value} credits worth of cargo that can be sold"
+      Util.log("You have 0 credits, but you have #{sellable_cargo_value} credits worth of cargo that can be sold")
       take_turn(game)
     end
 
@@ -210,7 +210,7 @@ def take_turn(game = Game.new(DATABASE))
                                          :turn_repaid => game.current_turn)
     end
   elsif game.current_credits == 0 and game.market.get_sellable_cargo_value < 2000
-    puts "You have 0 credits and sellable cargo only worth #{game.market.get_sellable_cargo_value} credits. Ending game now"
+    Util.log("You have 0 credits and sellable cargo only worth #{game.market.get_sellable_cargo_value} credits. Ending game now")
     game_over = true
   else
     if game.turns_left > 1
@@ -267,23 +267,22 @@ def take_turn(game = Game.new(DATABASE))
       end
     end
 
-    puts
-    puts 'Game stats:'
+    Util.add_newline
+    Util.log('Game stats:')
     Util.log("Ending credits: #{game.current_credits}")
     Util.log("Num turns: #{game.current_turn} (#{game.fuel_depot.num_purchases} fuel cells purchased #{"for a cost of #{game.fuel_depot.total_cost}" if game.fuel_depot.num_purchases > 0})")
-    puts "Num cargo bays: #{game.total_bays} [most filled=#{game.market.max_cargo_count}]"
-    puts "Cargo price percentages = [sell=#{Cargos.sell_percentage}, buy=#{Cargos.buy_percentage}]"
-    puts "Total economic instabilities: #{low_instabilities + high_instabilities} [#{low_instabilities} low, #{high_instabilities} high]"
-    puts "Pirate attacks: #{pirate_attacks} [#{Util.add_commas(pirate_attack_losses)} lost]"
-    print "Authorities raiding: #{authorities_raid} "
+    Util.log("Num cargo bays: #{game.total_bays} [most filled=#{game.market.max_cargo_count}]")
+    Util.log("Cargo price percentages = [sell=#{Cargos.sell_percentage}, buy=#{Cargos.buy_percentage}]")
+    Util.log("Total economic instabilities: #{low_instabilities + high_instabilities} [#{low_instabilities} low, #{high_instabilities} high]")
+    Util.log("Pirate attacks: #{pirate_attacks} [#{pirate_attack_losses} lost]")
+    raiding_log = "Authorities raiding: #{authorities_raid} "
     if authorities_raid > 0
-      print "[#{authorities_raid - authorities_found} nothing found, "
-      print "#{narcotics_lost} narcotics lost, "
-      print "#{weapons_lost} weapons lost]"
-      puts
-    else
-      puts
+      raiding_log += "[#{authorities_raid - authorities_found} nothing found, "
+      raiding_log += "#{narcotics_lost} narcotics lost, "
+      raiding_log += "#{weapons_lost} weapons lost]"
     end
+    Util.log(raiding_log)
+    Util.add_newline
 
     num_purchases = 0
     num_sales = 0
@@ -321,22 +320,22 @@ def take_turn(game = Game.new(DATABASE))
       (b[:tx_total_price]) <=> (a[:tx_total_price])
     end
     Util.log("You made #{num_purchases} purchases and #{num_sales} sales (may include multiple purchases for same cargo)")
-    puts 'Cargo volumes:'
+    Util.log('Cargo volumes:')
     cargo_volumes.each do |volume|
       Util.log("#{volume[:name].ljust(10)} #{volume[:buy]} bought and #{volume[:sell]} sold for individual profit of #{volume[:tx_total_price]}")
     end
 
-    puts
-    puts "All-time stats"
+    Util.add_newline
+    Util.log("All-time stats")
     avg_total_score = DATABASE.get_average_final_score.round(0)
     diff_from_avg = (game.current_credits - avg_total_score)
     Util.log("Average total score: #{avg_total_score} [this game: #{'+' if diff_from_avg > 0}#{diff_from_avg}]")
-    puts "Percent games with loanshark forced repayment: #{DATABASE.get_percent_forced_repayment}%"
-    puts "Percent games with loanshark forced repayment recovered: #{DATABASE.get_percent_forced_repayment_recovered}%"
+    Util.log("Percent games with loan shark forced repayment: #{DATABASE.get_percent_forced_repayment}%")
+    Util.log("Percent games with loan shark forced repayment recovered: #{DATABASE.get_percent_forced_repayment_recovered}%")
   end
 end
 
 starting = Process.clock_gettime(Process::CLOCK_MONOTONIC)
 take_turn
 ending = Process.clock_gettime(Process::CLOCK_MONOTONIC)
-puts "Completed game in #{((ending - starting) * 1000).round(3)} milliseconds"
+Util.log("Completed game in #{((ending - starting) * 1000).round(3)} milliseconds")
