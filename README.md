@@ -1,5 +1,5 @@
 # LokiBot
-Bot that plays Sky Smuggler
+Bot that plays [Sky Smuggler](https://skysmuggler.com/)
 
 ## Running
 
